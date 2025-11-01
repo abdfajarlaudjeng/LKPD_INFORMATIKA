@@ -1,231 +1,217 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Data - Aplikasi Lingkungan</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; background-color: #f4f4f4; margin: 0; padding: 0; }
-        header { background-color: #00796b; color: #ffffff; padding: 1rem; text-align: center; }
-        nav { background: #333; color: #fff; padding: 0.5rem; text-align: center; }
-        nav a { color: #fff; padding: 0.5rem 1rem; text-decoration: none; }
-        nav a:hover { background: #555; }
-        nav a.active { background-color: #00796b; font-weight: bold; }
-        main { max-width: 1200px; margin: 1rem auto; padding: 1rem; }
-        section { background: #fff; margin-bottom: 1rem; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        h2 { color: #00796b; border-bottom: 2px solid #f4f4f4; padding-bottom: 0.5rem; }
-        #loading-data, #loading-karya { text-align: center; color: #555; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Data - Aplikasi Lingkungan</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; background-color: #f4f4f4; margin: 0; padding: 0; }
 
-        /* Tata letak dashboard */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-        }
-        @media (max-width: 800px) {
-            .dashboard-grid { grid-template-columns: 1fr; }
-        }
+    /* HEADER */
+    header { background-color: #00796b; color: #ffffff; padding: 1rem 1rem 2rem 1rem; text-align: center; position: relative; }
+    header img { position: absolute; top: 50%; transform: translateY(-50%); height: 80px; }
+    header img.left-logo { left: 20px; }
+    header img.right-logo { right: 20px; }
+    header h2, header h1, header p { margin: 0; color: #fff; }
+    header h2 { font-size: 1.3rem; font-weight: bold; }
+    header h1 { font-size: 1.5rem; }
+    header p { font-size: 0.9rem; margin-top: 0.3rem; }
 
-        /* Tabel */
-        #table-container { max-height: 400px; overflow-y: auto; }
-        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-        table th, table td { border: 1px solid #ddd; padding: 0.5rem; text-align: left; }
-        table th { background-color: #f2f2f2; position: sticky; top: 0; }
-        
-        /* Galeri */
-        .galeri-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1rem;
-        }
-        .galeri-card {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 1rem;
-            background: #fafafa;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-        .galeri-card h4 { margin-top: 0; color: #004d40; }
-        .galeri-card p { font-size: 0.9rem; }
-        .galeri-card a {
-            display: inline-block;
-            background: #00796b;
-            color: #fff;
-            padding: 0.5rem 1rem;
-            text-decoration: none;
-            border-radius: 4px;
-            margin-top: 0.5rem;
-            font-size: 0.9rem;
-        }
-        .galeri-card a:hover { background: #004d40; }
-        .galeri-card .tipe {
-            font-size: 0.8rem;
-            font-weight: bold;
-            color: #555;
-            background: #eee;
-            padding: 2px 6px;
-            border-radius: 4px;
-            display: inline-block;
-            margin-bottom: 0.5rem;
-        }
-        
-        footer { text-align: center; padding: 1rem; background: #333; color: #fff; margin-top: 2rem; }
-    </style>
+    /* NAVBAR */
+    nav {
+        background: #333;
+        color: #fff;
+        padding: 0.5rem;
+        text-align: center;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+    nav a { color: #fff; padding: 0.5rem 1rem; text-decoration: none; margin: 2px; display: inline-block; }
+    nav a:hover { background: #555; }
+    nav a.active { background-color: #00796b; font-weight: bold; }
+
+    main { max-width: 1200px; margin: 1rem auto; padding: 1rem; }
+
+    section { background: #fff; margin-bottom: 1.5rem; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+
+    h2 { color: #00796b; padding-bottom: 0.5rem; } /* border-bottom dihapus */
+    h3 { color: #004d40; margin-top: 1rem; }
+    h4 { color: #004d40; margin-top: 0.5rem; }
+    #loading-data, #loading-karya { text-align: center; color: #555; margin-top: 1rem; }
+
+    /* Tata letak dashboard */
+    .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem; }
+    @media (max-width: 800px) { .dashboard-grid { grid-template-columns: 1fr; } }
+
+    /* Tabel */
+    #table-container { max-height: 400px; overflow-y: auto; padding-left: 0.5rem; padding-right: 0.5rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    table th, table td { border: 1px solid #ddd; padding: 0.5rem; text-align: left; }
+    table th { background-color: #f2f2f2; position: sticky; top: 0; }
+
+    /* Galeri */
+    .galeri-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin-top: 1rem; }
+    .galeri-card { border: 1px solid #ddd; border-radius: 8px; padding: 1rem; background: #fafafa; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .galeri-card h4 { margin-top: 0; color: #004d40; }
+    .galeri-card p { font-size: 0.9rem; }
+    .galeri-card a { display: inline-block; background: #00796b; color: #fff; padding: 0.5rem 1rem; text-decoration: none; border-radius: 4px; margin-top: 0.5rem; font-size: 0.9rem; }
+    .galeri-card a:hover { background: #004d40; }
+    .galeri-card .tipe { font-size: 0.8rem; font-weight: bold; color: #555; background: #eee; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 0.5rem; }
+
+    footer { text-align: center; padding: 1rem; background: #333; color: #fff; margin-top: 2rem; }
+
+    /* Responsive Header */
+    @media (max-width: 600px){
+        header img { position: static; transform: none; display: block; margin: 0.5rem auto; height: 60px; }
+        header h2, header h1, header p { text-align: center; }
+        main { padding: 0.5rem; }
+        section { padding: 1rem; }
+    }
+</style>
 </head>
 <body>
-    <header><h1>Sistem Analisis Data Lingkungan Sekolah</h1></header>
-    <nav>
-        <a href="index.html">Input Data</a>
-        <a href="dashboard.html" class="active">Lihat Dashboard</a>
-        <a href="submit-karya.html">Kumpulkan Karya</a>
-        <a href="lkpd-hardware.html">LKPD Hardware</a>
-        <a href="materi-informatika.html">Materi Informatika</a>
-    </nav>
+<header>
+    <img src="https://upload.wikimedia.org/wikipedia/commons/e/e5/Lambang_Kabupaten_Donggala_%282015-sekarang%29.png" alt="Logo Kabupaten Donggala" class="left-logo">
+    <img src="smpn10.jpg" alt="Logo Sekolah" class="right-logo">
+    <h2>PEMERINTAH KABUPATEN DONGGALA</h2>
+    <h1>SMP NEGERI 10 BANAWA SELATAN</h1>
+    <p>Alamat: Jalan PNPM Dusun Bambami, Desa Malino, Kec. Banawa Selatan</p>
+</header>
 
-    <main>
-        <section id="data-dashboard">
-            <h2>Dashboard Data Sampah</h2>
-            <p id="loading-data">Memuat data sampah...</p>
-            <div class="dashboard-grid">
-                <div id="chart-container">
-                    <h3>Grafik Total Sampah per Jenis</h3>
-                    <canvas id="myChart"></canvas>
-                </div>
-                <div id="table-container">
-                    <h3>Data Mentah (Semua Entri)</h3>
-                    </div>
+<nav>
+    <a href="index.html">Input Data</a>
+    <a href="dashboard.html" class="active">Lihat Dashboard</a>
+    <a href="submit-karya.html">Kumpulkan Karya</a>
+    <a href="lkpd-hardware.html">LKPD Hardware</a>
+    <a href="materi-informatika.html">Materi Informatika</a>
+</nav>
+
+<main>
+    <section id="data-dashboard">
+        <h2>Dashboard Data Sampah</h2>
+        <p id="loading-data">Memuat data sampah...</p>
+        <div class="dashboard-grid">
+            <div id="chart-container">
+                <h3>Grafik Total Sampah per Jenis</h3>
+                <canvas id="myChart"></canvas>
             </div>
-        </section>
+            <div id="table-container">
+                <h3>Data Mentah (Semua Entri)</h3>
+            </div>
+        </div>
+    </section>
 
-        <section id="galeri-karya">
-            <h2>Galeri Karya Kampanye</h2>
-            <p id="loading-karya">Memuat galeri karya...</p>
-            <div class="galeri-container" id="galeri-container">
-                </div>
-        </section>
-    </main>
+    <section id="galeri-karya">
+        <h2>Galeri Karya Kampanye</h2>
+        <p id="loading-karya">Memuat galeri karya...</p>
+        <div class="galeri-container" id="galeri-container"></div>
+    </section>
+</main>
 
-    <footer><p>&copy; 2025 - Proyek Fase D</p></footer>
+<footer><p>&copy; 2025 - Proyek Fase D</p></footer>
 
-    <script>
-        // URL SCRIPT ANDA SUDAH DIMASUKKAN DI SINI
-        const scriptURL = 'https://script.google.com/macros/s/AKfycbxmRpoTmJKEPYQeex0SyRsZ7uYCdpBPZyFstI6WP7G2ChHDOgnVNC5o_27DMXYYB_8GZw/exec';
-        
-        // Elemen Halaman
-        const loadingDataMsg = document.getElementById('loading-data');
-        const loadingKaryaMsg = document.getElementById('loading-karya');
-        const tableContainer = document.getElementById('table-container');
-        const galeriContainer = document.getElementById('galeri-container');
-        const ctx = document.getElementById('myChart').getContext('2d');
-        let myChart;
+<script>
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbxmRpoTmJKEPYQeex0SyRsZ7uYCdpBPZyFstI6WP7G2ChHDOgnVNC5o_27DMXYYB_8GZw/exec';
+    
+    const loadingDataMsg = document.getElementById('loading-data');
+    const loadingKaryaMsg = document.getElementById('loading-karya');
+    const tableContainer = document.getElementById('table-container');
+    const galeriContainer = document.getElementById('galeri-container');
+    const ctx = document.getElementById('myChart').getContext('2d');
+    let myChart;
 
-        // Saat halaman dimuat, jalankan kedua fungsi fetch
-        window.addEventListener('DOMContentLoaded', () => {
-            fetchDataSampah();
-            fetchDataKarya();
+    window.addEventListener('DOMContentLoaded', () => {
+        fetchDataSampah();
+        fetchDataKarya();
+    });
+
+    function fetchDataSampah() {
+        fetch(scriptURL + "?action=getData")
+            .then(response => response.json())
+            .then(data => {
+                if (data.result === 'success') {
+                    loadingDataMsg.style.display = 'none';
+                    buildTable(data.data);
+                    buildChart(data.data);
+                } else { throw new Error(data.message || 'Gagal mengambil data'); }
+            })
+            .catch(error => {
+                loadingDataMsg.textContent = 'Oops! Gagal memuat data sampah. ' + error.message;
+                loadingDataMsg.style.color = 'red';
+            });
+    }
+
+    function fetchDataKarya() {
+        fetch(scriptURL + "?action=getKarya")
+            .then(response => response.json())
+            .then(data => {
+                if (data.result === 'success') {
+                    loadingKaryaMsg.style.display = 'none';
+                    buildGallery(data.data);
+                } else { throw new Error(data.message || 'Gagal mengambil karya'); }
+            })
+            .catch(error => {
+                loadingKaryaMsg.textContent = 'Oops! Gagal memuat galeri karya. ' + error.message;
+                loadingKaryaMsg.style.color = 'red';
+            });
+    }
+
+    function buildTable(data) {
+        let table = '<table>';
+        if (data.length > 0) {
+            table += '<thead><tr>';
+            Object.keys(data[0]).forEach(key => { table += `<th>${key}</th>`; });
+            table += '</tr></thead>';
+        }
+        table += '<tbody>';
+        data.forEach(row => {
+            table += '<tr>';
+            Object.values(row).forEach(value => { table += `<td>${value}</td>`; });
+            table += '</tr>';
+        });
+        table += '</tbody></table>';
+        tableContainer.innerHTML = table;
+    }
+
+    function buildChart(data) {
+        const totals = {};
+        data.forEach(row => {
+            const jenis = row.jenis_sampah;
+            const jumlah = parseInt(row.jumlah, 10) || 0;
+            totals[jenis] = (totals[jenis] || 0) + jumlah;
         });
 
-        // ===================================
-        // FUNGSI 1: Ambil Data Sampah (Sheet1)
-        // ===================================
-        function fetchDataSampah() {
-            // Tambahkan parameter ?action=getData
-            fetch(scriptURL + "?action=getData")
-                .then(response => response.json())
-                .then(data => {
-                    if (data.result === 'success') {
-                        loadingDataMsg.style.display = 'none';
-                        buildTable(data.data);
-                        buildChart(data.data);
-                    } else { throw new Error(data.message || 'Gagal mengambil data'); }
-                })
-                .catch(error => {
-                    loadingDataMsg.textContent = 'Oops! Gagal memuat data sampah. ' + error.message;
-                    loadingDataMsg.style.color = 'red';
-                });
-        }
+        if (myChart) { myChart.destroy(); }
+        myChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(totals),
+                datasets: [{ label: 'Total Sampah', data: Object.values(totals), backgroundColor: ['#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4'] }]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'top' } } }
+        });
+    }
 
-        // ===================================
-        // FUNGSI 2: Ambil Data Karya (KumpulanKarya)
-        // ===================================
-        function fetchDataKarya() {
-            // Tambahkan parameter ?action=getKarya
-            fetch(scriptURL + "?action=getKarya")
-                .then(response => response.json())
-                .then(data => {
-                    if (data.result === 'success') {
-                        loadingKaryaMsg.style.display = 'none';
-                        buildGallery(data.data);
-                    } else { throw new Error(data.message || 'Gagal mengambil karya'); }
-                })
-                .catch(error => {
-                    loadingKaryaMsg.textContent = 'Oops! Gagal memuat galeri karya. ' + error.message;
-                    loadingKaryaMsg.style.color = 'red';
-                });
+    function buildGallery(data) {
+        if (data.length === 0) {
+            galeriContainer.innerHTML = '<p>Belum ada karya yang dikumpulkan.</p>';
+            return;
         }
-
-        // --- Fungsi Pembantu (Builder) ---
-
-        function buildTable(data) {
-            let table = '<table>';
-            if (data.length > 0) {
-                table += '<thead><tr>';
-                Object.keys(data[0]).forEach(key => { table += `<th>${key}</th>`; });
-                table += '</tr></thead>';
-            }
-            table += '<tbody>';
-            data.forEach(row => {
-                table += '<tr>';
-                Object.values(row).forEach(value => { table += `<td>${value}</td>`; });
-                table += '</tr>';
-            });
-            table += '</tbody></table>';
-            tableContainer.innerHTML = table;
-        }
-
-        function buildChart(data) {
-            const totals = {};
-            data.forEach(row => {
-                const jenis = row.jenis_sampah;
-                const jumlah = parseInt(row.jumlah, 10) || 0;
-                totals[jenis] = (totals[jenis] || 0) + jumlah;
-            });
-
-            if (myChart) { myChart.destroy(); }
-            myChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(totals),
-                    datasets: [{
-                        label: 'Total Sampah',
-                        data: Object.values(totals),
-                        backgroundColor: ['#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4'],
-                    }]
-                },
-                options: { responsive: true, plugins: { legend: { position: 'top' } } }
-            });
-        }
-        
-        function buildGallery(data) {
-            if (data.length === 0) {
-                galeriContainer.innerHTML = '<p>Belum ada karya yang dikumpulkan.</p>';
-                return;
-            }
-            
-            galeriContainer.innerHTML = ''; // Kosongkan galeri
-            data.reverse().forEach(karya => { // .reverse() agar yang terbaru di atas
-                let card = document.createElement('div');
-                card.className = 'galeri-card';
-                card.innerHTML = `
-                    <span class="tipe">${karya.tipe_karya}</span>
-                    <h4>${karya.nama_kelompok}</h4>
-                    <p>${karya.deskripsi_karya}</p>
-                    <a href="${karya.link_karya}" target="_blank">Lihat Karya</a>
-                `;
-                galeriContainer.appendChild(card);
-            });
-        }
-    </script>
+        galeriContainer.innerHTML = '';
+        data.reverse().forEach(karya => {
+            let card = document.createElement('div');
+            card.className = 'galeri-card';
+            card.innerHTML = `
+                <span class="tipe">${karya.tipe_karya}</span>
+                <h4>${karya.nama_kelompok}</h4>
+                <p>${karya.deskripsi_karya}</p>
+                <a href="${karya.link_karya}" target="_blank">Lihat Karya</a>
+            `;
+            galeriContainer.appendChild(card);
+        });
+    }
+</script>
 </body>
 </html>
