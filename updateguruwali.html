@@ -1,148 +1,272 @@
 <!doctype html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sistem Evaluasi Guru Wali Canva</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<style>
-.loading-spinner { border:3px solid #f3f4f6;border-top:3px solid #3b82f6;border-radius:50%;width:20px;height:20px;animation:spin 1s linear infinite; }
-@keyframes spin {0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Guru Wali - Sistem Evaluasi</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .loading-spinner { border:3px solid #f3f4f6; border-top:3px solid #3b82f6; border-radius:50%; width:18px; height:18px; animation:spin 1s linear infinite; display:inline-block; vertical-align:middle; }
+    @keyframes spin {0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+    body { -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+  </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-indigo-100 font-sans min-h-screen p-6">
+<body class="min-h-screen bg-gradient-to-br from-sky-50 to-indigo-100 p-6 font-sans">
+  <div class="max-w-6xl mx-auto">
 
-<header class="bg-white p-6 rounded-lg shadow mb-6">
-  <h1 class="text-3xl font-bold text-gray-800 mb-2">📘 Sistem Evaluasi Guru Wali</h1>
-  <p class="text-gray-600">Input Data Guru dan Evaluasi Siswa</p>
-</header>
+    <header class="bg-white p-6 rounded-lg shadow mb-6">
+      <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
+        <div>
+          <h1 class="text-2xl md:text-3xl font-bold text-gray-800">📘 Sistem Evaluasi — Guru Wali</h1>
+          <p class="text-sm text-gray-600">Input data guru & input evaluasi siswa. Data tersimpan ke Google Sheets.</p>
+        </div>
+        <div class="text-right">
+          <p class="text-sm text-gray-500">Spreadsheet ID:</p>
+          <p id="spreadsheet-id" class="font-mono text-sm text-gray-700">1geyGNJ6l-b0vSpXtBxN4YW_PkL_7eIsvU9tVlhcq-ik</p>
+        </div>
+      </div>
+    </header>
 
-<!-- FORM GURU -->
-<div class="bg-white rounded-lg shadow p-6 mb-6">
-  <h2 class="text-xl font-semibold mb-4 text-gray-800">🧑‍🏫 Input Data Guru</h2>
-  <form id="guru-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <input type="text" id="nama-guru" placeholder="Nama Guru" required class="border p-2 rounded">
-    <input type="text" id="kelas" placeholder="Kelas (misal: 7A)" required class="border p-2 rounded">
-    <input type="text" id="mapel" placeholder="Mata Pelajaran" required class="border p-2 rounded">
-    <input type="text" id="semester" placeholder="Semester (Ganjil/Genap)" required class="border p-2 rounded">
-    <button type="submit" id="save-guru" class="md:col-span-2 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">Simpan Data Guru</button>
-  </form>
-</div>
+    <!-- Data Guru -->
+    <section class="bg-white p-6 rounded-lg shadow mb-6">
+      <h2 class="text-lg font-semibold text-gray-800 mb-3">🧑‍🏫 Input Data Guru</h2>
+      <form id="guru-form" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <input id="nama-guru" required placeholder="Nama Guru" class="border p-2 rounded" />
+        <input id="kelas-guru" required placeholder="Kelas (contoh: 7A)" class="border p-2 rounded" />
+        <input id="mapel-guru" required placeholder="Mata Pelajaran" class="border p-2 rounded" />
+        <input id="semester-guru" required placeholder="Semester (Ganjil/Genap)" class="border p-2 rounded" />
+        <div class="md:col-span-3 flex gap-3">
+          <button type="submit" id="btn-save-guru" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Simpan Data Guru</button>
+          <div id="guru-save-loading" class="hidden items-center gap-2"><span class="loading-spinner"></span><span class="text-sm text-gray-600">Menyimpan...</span></div>
+        </div>
+      </form>
+      <p id="guru-msg" class="mt-3 text-sm"></p>
+    </section>
 
-<!-- FORM SISWA -->
-<div class="bg-white rounded-lg shadow p-6 mb-6">
-  <div class="flex justify-between items-center mb-4">
-    <h2 class="text-xl font-semibold text-gray-800">👩‍🎓 Tambah Evaluasi Siswa</h2>
-    <button id="toggle-form" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">Tambah Siswa</button>
+    <!-- Input Siswa -->
+    <section class="bg-white p-6 rounded-lg shadow mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-gray-800">👩‍🎓 Tambah Evaluasi Siswa</h2>
+        <div class="flex items-center gap-2">
+          <input id="view-class-input" placeholder="Masukkan nama kelas untuk dilihat (mis: 7A)" class="border p-2 rounded text-sm" />
+          <button id="btn-load-class" class="bg-gray-700 hover:bg-gray-800 text-white px-3 py-2 rounded text-sm">Load</button>
+        </div>
+      </div>
+
+      <form id="student-form" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <input id="student-name" placeholder="Nama Siswa" required class="border p-2 rounded" />
+        <input id="student-class" placeholder="Kelas (mis: 7A)" required class="border p-2 rounded" />
+        <input id="student-semester" placeholder="Semester" required class="border p-2 rounded" />
+        <input id="academic-score" type="number" min="0" max="100" placeholder="Nilai Akademik (0-100)" required class="border p-2 rounded" />
+        <input id="behavior-score" type="number" min="0" max="100" placeholder="Nilai Perilaku (0-100)" required class="border p-2 rounded" />
+        <input id="attendance" type="number" min="0" max="100" placeholder="Kehadiran (%)" required class="border p-2 rounded" />
+        <textarea id="notes" rows="2" placeholder="Catatan (opsional)" class="border p-2 rounded md:col-span-3"></textarea>
+        <div class="md:col-span-3 flex gap-3">
+          <button type="submit" id="submit-btn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">Simpan Evaluasi</button>
+          <div id="student-save-loading" class="hidden items-center gap-2"><span class="loading-spinner"></span><span class="text-sm text-gray-600">Menyimpan...</span></div>
+          <button type="button" id="btn-reset" class="ml-auto bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 rounded">Reset Form</button>
+        </div>
+      </form>
+      <p id="student-msg" class="mt-3 text-sm"></p>
+    </section>
+
+    <!-- Daftar Evaluasi -->
+    <section class="bg-white p-6 rounded-lg shadow mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-gray-800">📄 Daftar Evaluasi Siswa</h2>
+        <div class="text-sm text-gray-600">Menampilkan sheet: <span id="current-class-display" class="font-mono">-</span></div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table id="students-table" class="min-w-full text-sm table-auto">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-3 py-2 text-left">Nama</th>
+              <th class="px-3 py-2 text-left">Kelas</th>
+              <th class="px-3 py-2 text-left">Akademik</th>
+              <th class="px-3 py-2 text-left">Perilaku</th>
+              <th class="px-3 py-2 text-left">Kehadiran</th>
+              <th class="px-3 py-2 text-left">Semester</th>
+              <th class="px-3 py-2 text-left">Catatan</th>
+              <th class="px-3 py-2 text-left">Waktu</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white" id="students-tbody">
+            <tr><td class="px-3 py-6 text-center text-gray-500" colspan="8">Belum ada data. Simpan evaluasi siswa untuk melihatnya di sini.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p id="table-msg" class="mt-3 text-sm text-gray-600"></p>
+    </section>
+
+    <footer class="text-center text-xs text-gray-500 mt-6">
+      Created — Guru Wali Canva · Pastikan Web App Apps Script sudah dideploy dan publik.
+    </footer>
+
   </div>
-  <form id="student-form" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
-    <input type="text" id="student-name" placeholder="Nama Siswa" required class="border p-2 rounded">
-    <input type="text" id="student-class" placeholder="Kelas (misal: 7A)" required class="border p-2 rounded">
-    <input type="number" id="academic-score" placeholder="Nilai Akademik (0-100)" required class="border p-2 rounded">
-    <input type="number" id="behavior-score" placeholder="Nilai Perilaku (0-100)" required class="border p-2 rounded">
-    <input type="number" id="attendance" placeholder="Kehadiran (%)" required class="border p-2 rounded">
-    <input type="text" id="student-semester" placeholder="Semester" required class="border p-2 rounded">
-    <textarea id="notes" rows="3" placeholder="Catatan Evaluasi" class="border p-2 rounded md:col-span-2"></textarea>
-    <button type="submit" id="submit-btn" class="md:col-span-2 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded flex items-center justify-center gap-2">
-      <span>Simpan Evaluasi</span><div id="submit-loading" class="loading-spinner hidden"></div>
-    </button>
-  </form>
-</div>
-
-<!-- TABEL -->
-<div class="bg-white rounded-lg shadow p-6">
-  <h2 class="text-xl font-semibold text-gray-800 mb-4">📄 Daftar Evaluasi Siswa</h2>
-  <div class="overflow-x-auto">
-    <table class="w-full text-sm text-left">
-      <thead class="bg-gray-50">
-        <tr>
-          <th class="px-4 py-2">Nama</th>
-          <th class="px-4 py-2">Kelas</th>
-          <th class="px-4 py-2">Akademik</th>
-          <th class="px-4 py-2">Perilaku</th>
-          <th class="px-4 py-2">Kehadiran</th>
-          <th class="px-4 py-2">Semester</th>
-          <th class="px-4 py-2">Catatan</th>
-        </tr>
-      </thead>
-      <tbody id="students-table"></tbody>
-    </table>
-  </div>
-</div>
 
 <script>
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby-wZW3ZcM-pQKtOsGdno-AcXYOrax0LPifsJ9001o5T9UjoYZaRfUtahiGsV1vU7XM/exec"; // Ganti dengan URL Web App kamu
-let students = [];
+/* =========================
+   PENTING: GANTI WEB_APP_URL
+   ========================= */
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwHE-7_21_0Mky4hk8IkQP2hcyX57vP9us0nLobS3NLWg6DNijqC_tHDvhZ4dWdb-tA/exec"; // <<-- ganti dengan URL Web App Apps Script mu (contoh: https://script.google.com/macros/s/AKfycb.../exec)
 
-document.getElementById("guru-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const guruData = {
-    type: "guru",
-    nama_guru: document.getElementById("nama-guru").value.trim(),
-    kelas: document.getElementById("kelas").value.trim(),
-    mapel: document.getElementById("mapel").value.trim(),
-    semester: document.getElementById("semester").value.trim()
-  };
-  await fetch(WEB_APP_URL, {
-    method: "POST",
-    body: JSON.stringify(guruData),
-    headers: {"Content-Type": "application/json"}
-  });
-  alert("✅ Data guru berhasil disimpan!");
-});
-
-document.getElementById("toggle-form").addEventListener("click", () => {
-  document.getElementById("student-form").classList.toggle("hidden");
-});
-
-document.getElementById("student-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const data = {
-    type: "siswa",
-    student_id: "student_" + Date.now(),
-    name: document.getElementById("student-name").value.trim(),
-    class: document.getElementById("student-class").value.trim(),
-    academic_score: parseInt(document.getElementById("academic-score").value),
-    behavior_score: parseInt(document.getElementById("behavior-score").value),
-    attendance_percentage: parseInt(document.getElementById("attendance").value),
-    semester: document.getElementById("student-semester").value.trim(),
-    notes: document.getElementById("notes").value.trim(),
-    evaluation_date: new Date().toISOString()
-  };
-  document.getElementById("submit-loading").classList.remove("hidden");
-  await fetch(WEB_APP_URL, {
-    method: "POST",
-    body: JSON.stringify(data),
-    headers: {"Content-Type": "application/json"}
-  });
-  document.getElementById("submit-loading").classList.add("hidden");
-  alert("✅ Data siswa berhasil disimpan!");
-  e.target.reset();
-  fetchStudents(data.class);
-});
-
-async function fetchStudents(kelas) {
-  const res = await fetch(WEB_APP_URL + "?kelas=" + encodeURIComponent(kelas));
-  students = await res.json();
-  renderStudents();
+/* Utility */
+function showTempMessage(el, text, type = "info", duration = 3500) {
+  el.textContent = text;
+  if (type === "success") el.classList.add("text-green-600"), el.classList.remove("text-red-600");
+  if (type === "error") el.classList.add("text-red-600"), el.classList.remove("text-green-600");
+  setTimeout(() => { el.textContent = ""; }, duration);
 }
 
-function renderStudents() {
-  const tbody = document.getElementById("students-table");
+/* Form Guru */
+const guruForm = document.getElementById("guru-form");
+const guruMsg = document.getElementById("guru-msg");
+const guruLoading = document.getElementById("guru-save-loading");
+guruForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const nama = document.getElementById("nama-guru").value.trim();
+  const kelas = document.getElementById("kelas-guru").value.trim();
+  const mapel = document.getElementById("mapel-guru").value.trim();
+  const semester = document.getElementById("semester-guru").value.trim();
+  if (!nama || !kelas || !mapel || !semester) { showTempMessage(guruMsg, "Lengkapi semua field!", "error"); return; }
+
+  guruLoading.classList.remove("hidden");
+  try {
+    const payload = { type: "guru", nama_guru: nama, kelas: kelas, mapel: mapel, semester: semester };
+    const r = await fetch(WEB_APP_URL, {
+      method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload)
+    });
+    const j = await r.json();
+    if (j && j.success) {
+      showTempMessage(guruMsg, "✔ Data guru berhasil disimpan.", "success");
+      // optional: auto-fill student-class with saved kelas
+      document.getElementById("student-class").value = kelas;
+    } else {
+      showTempMessage(guruMsg, "✖ Gagal menyimpan data guru (server).", "error");
+      console.error("Response", j);
+    }
+  } catch (err) {
+    showTempMessage(guruMsg, "✖ Kesalahan koneksi: " + err.message, "error");
+    console.error(err);
+  } finally { guruLoading.classList.add("hidden"); }
+});
+
+/* Form Siswa */
+const studentForm = document.getElementById("student-form");
+const studentMsg = document.getElementById("student-msg");
+const studentLoading = document.getElementById("student-save-loading");
+studentForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const name = document.getElementById("student-name").value.trim();
+  const cls = document.getElementById("student-class").value.trim();
+  const semester = document.getElementById("student-semester").value.trim();
+  const academic = parseInt(document.getElementById("academic-score").value || 0, 10);
+  const behavior = parseInt(document.getElementById("behavior-score").value || 0, 10);
+  const attendance = parseInt(document.getElementById("attendance").value || 0, 10);
+  const notes = document.getElementById("notes").value.trim();
+
+  if (!name || !cls || !semester) { showTempMessage(studentMsg, "Lengkapi nama, kelas, dan semester.", "error"); return; }
+
+  const payload = {
+    type: "siswa",
+    student_id: "student_" + Date.now(),
+    name: name,
+    class: cls,
+    academic_score: academic,
+    behavior_score: behavior,
+    attendance_percentage: attendance,
+    semester: semester,
+    notes: notes,
+    evaluation_date: new Date().toISOString()
+  };
+
+  studentLoading.classList.remove("hidden");
+  try {
+    const r = await fetch(WEB_APP_URL, {
+      method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload)
+    });
+    const j = await r.json();
+    if (j && j.success) {
+      showTempMessage(studentMsg, "✔ Data siswa berhasil disimpan.", "success");
+      studentForm.reset();
+      // Setelah disimpan, otomatis load data kelas itu
+      loadClass(cls);
+    } else {
+      showTempMessage(studentMsg, "✖ Gagal menyimpan data siswa (server).", "error");
+      console.error("Response", j);
+    }
+  } catch (err) {
+    showTempMessage(studentMsg, "✖ Kesalahan koneksi: " + err.message, "error");
+    console.error(err);
+  } finally { studentLoading.classList.add("hidden"); }
+});
+
+/* Load class data (GET ?kelas=...) */
+const btnLoadClass = document.getElementById("btn-load-class");
+const viewClassInput = document.getElementById("view-class-input");
+const currentClassDisplay = document.getElementById("current-class-display");
+const studentsTbody = document.getElementById("students-tbody");
+const tableMsg = document.getElementById("table-msg");
+
+btnLoadClass.addEventListener("click", () => {
+  const k = (viewClassInput.value || document.getElementById("student-class").value || "").trim();
+  if (!k) { showTempMessage(tableMsg, "Masukkan nama kelas untuk dilihat (mis: 7A).", "error"); return; }
+  loadClass(k);
+});
+
+async function loadClass(kelasName) {
+  currentClassDisplay.textContent = kelasName;
+  studentsTbody.innerHTML = `<tr><td class="px-3 py-6 text-center text-gray-500" colspan="8">Memuat data...</td></tr>`;
+  try {
+    const r = await fetch(WEB_APP_URL + "?kelas=" + encodeURIComponent(kelasName));
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const data = await r.json();
+    renderStudentsTable(data);
+    if (!data || data.length === 0) {
+      tableMsg.textContent = "Sheet kosong atau belum ada data untuk kelas ini.";
+    } else {
+      tableMsg.textContent = `Menampilkan ${data.length} baris dari sheet "${kelasName}".`;
+    }
+  } catch (err) {
+    studentsTbody.innerHTML = `<tr><td class="px-3 py-6 text-center text-red-600" colspan="8">Gagal memuat data: ${err.message}</td></tr>`;
+    tableMsg.textContent = "Periksa URL Web App / koneksi / pengaturan akses Web App.";
+    console.error(err);
+  }
+}
+
+function renderStudentsTable(rows) {
+  const tbody = studentsTbody;
   tbody.innerHTML = "";
-  students.forEach(s => {
+  if (!rows || rows.length === 0) {
+    tbody.innerHTML = `<tr><td class="px-3 py-6 text-center text-gray-500" colspan="8">Belum ada data.</td></tr>`;
+    return;
+  }
+  rows.forEach(r => {
     const tr = document.createElement("tr");
+    const evaluationDate = r.evaluation_date ? new Date(r.evaluation_date).toLocaleString() : "";
     tr.innerHTML = `
-      <td class="px-4 py-2">${s.name}</td>
-      <td class="px-4 py-2">${s.class}</td>
-      <td class="px-4 py-2">${s.academic_score}</td>
-      <td class="px-4 py-2">${s.behavior_score}</td>
-      <td class="px-4 py-2">${s.attendance_percentage}%</td>
-      <td class="px-4 py-2">${s.semester}</td>
-      <td class="px-4 py-2">${s.notes}</td>`;
+      <td class="px-3 py-2">${escapeHtml(r.name)}</td>
+      <td class="px-3 py-2">${escapeHtml(r.class)}</td>
+      <td class="px-3 py-2">${escapeHtml(r.academic_score)}</td>
+      <td class="px-3 py-2">${escapeHtml(r.behavior_score)}</td>
+      <td class="px-3 py-2">${escapeHtml(r.attendance_percentage)}%</td>
+      <td class="px-3 py-2">${escapeHtml(r.semester)}</td>
+      <td class="px-3 py-2">${escapeHtml(r.notes)}</td>
+      <td class="px-3 py-2">${escapeHtml(evaluationDate)}</td>
+    `;
     tbody.appendChild(tr);
   });
 }
+
+/* small helpers */
+function escapeHtml(s){ if(s===null||s===undefined) return ""; return String(s).replace(/[&<>"']/g, (m)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[m]); }
+
+/* Init: jika ada isi di student-class, load */
+window.addEventListener("load", () => {
+  const pre = document.getElementById("student-class").value.trim();
+  if (pre) loadClass(pre);
+});
 </script>
 </body>
 </html>
