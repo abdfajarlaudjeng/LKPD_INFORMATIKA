@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKPD - Perangkat Keras TIK</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; background-color: #f4f4f4; margin: 0; padding: 0; }
+        header { background-color: #00796b; color: #ffffff; padding: 1rem; text-align: center; position: relative; }
+        header img { height: 80px; position: absolute; top: 10px; }
+        header img.left-logo { left: 20px; }
+        header img.right-logo { right: 20px; }
+        header h1 { margin: 0; font-size: 1.5rem; }
+        header h2, header p { margin: 0; }
+
+        nav { background: #333; color: #fff; padding: 0.5rem; text-align: center; }
+        nav a { color: #fff; padding: 0.5rem 1rem; text-decoration: none; }
+        nav a:hover { background: #555; }
+        nav a.active { background-color: #00796b; font-weight: bold; }
+
+        main { max-width: 900px; margin: 1rem auto; padding: 1rem; }
+        section { background: #fff; margin-bottom: 1rem; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h2 { color: #00796b; border-bottom: 2px solid #f4f4f4; padding-bottom: 0.5rem; }
+        h3 { color: #004d40; }
+
+        /* Gaya Materi Dinamis */
+        .hardware-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem; }
+        .hardware-item { text-align: center; }
+        .hardware-item img { width: 100px; height: 100px; object-fit: contain; border: 1px solid #ddd; border-radius: 4px; padding: 5px; }
+        .rangkuman-list { list-style-type: '✅'; padding-left: 20px; margin: 0; }
+        #loading-materi, #loading-lkpd { text-align: center; font-style: italic; color: #555; }
+
+        /* Gaya LKPD Dinamis */
+        #lkpd-form table { width: 100%; border-collapse: collapse; }
+        #lkpd-form th, #lkpd-form td { padding: 10px; border: 1px solid #ddd; text-align: left; vertical-align: middle; }
+        #lkpd-form th:first-child, #lkpd-form td:first-child { width: 150px; text-align: center; }
+        #lkpd-form img { width: 120px; height: 120px; object-fit: contain; border-radius: 4px; }
+        #lkpd-form select { width: 100%; padding: 8px; font-size: 1rem; border-radius: 4px; }
+
+        .form-grup { margin-bottom: 1rem; }
+        .form-grup label { display: block; margin-bottom: 0.3rem; font-weight: bold; }
+        .form-grup input[type="text"] { width: 100%; padding: 0.5rem; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+
+        button { background: #00796b; color: #fff; padding: 0.7rem 1.5rem; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; }
+        button:hover { background: #004d40; }
+
+        #form-message { margin-top: 15px; font-weight: bold; font-size: 1.2rem; text-align: center; }
+
+        footer { text-align: center; padding: 1rem; background: #333; color: #fff; margin-top: 2rem; }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/e/e5/Lambang_Kabupaten_Donggala_%282015-sekarang%29.png" alt="Logo Kabupaten Donggala" class="left-logo">
+        <img src="smpn10.jpg" alt="Logo Sekolah" class="right-logo">
+        <h2>PEMERINTAH KABUPATEN DONGGALA</h2>
+        <h1>SMP NEGERI 10 BANAWA SELATAN</h1>
+        <p>Alamat: Jalan PNPM Dusun Bambami, Desa Malino, Kec. Banawa Selatan</p>
+    </header>
+
+    <nav>
+        <a href="index.html">Input Data</a>
+        <a href="dashboard.html">Lihat Dashboard</a>
+        <a href="submit-karya.html">Kumpulkan Karya</a>
+        <a href="lkpd-hardware.html" class="active">LKPD Hardware</a>
+        <a href="materi-informatika.html">Materi Informatika</a>
+    </nav>
+
+    <main>
+        <section id="materi-section">
+            <h2 id="loading-materi">Memuat materi...</h2>
+        </section>
+
+        <section id="lkpd-section">
+            <h2>LKPD: Jodohkan Gambar!</h2>
+            <p>Setelah membaca materi, ayo uji pemahamanmu! Jodohkan gambar di sebelah kiri dengan nama perangkat yang tepat di sebelah kanan.</p>
+
+            <form id="lkpd-form">
+                <input type="hidden" name="formType" value="lkpdMatch">
+
+                <div class="form-grup">
+                    <label for="nama_siswa">Nama Lengkap Siswa:</label>
+                    <input type="text" id="nama_siswa" name="nama_siswa" required>
+                </div>
+                <div class="form-grup">
+                    <label for="kelas">Kelas:</label>
+                    <input type="text" id="kelas" name="kelas" placeholder="Contoh: 7A" required>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Gambar</th>
+                            <th>Nama Perangkat</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lkpd-tbody"></tbody>
+                </table>
+                <p id="loading-lkpd">Memuat soal dari database...</p>
+                <br>
+                <button type="submit" id="submit-button" style="display:none;">Kumpulkan Jawaban</button>
+            </form>
+            <div id="form-message"></div>
+        </section>
+    </main>
+
+    <footer><p>&copy; 2025 - Proyek Fase D</p></footer>
+
+    <script>
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbxmRpoTmJKEPYQeex0SyRsZ7uYCdpBPZyFstI6WP7G2ChHDOgnVNC5o_27DMXYYB_8GZw/exec';
+        
+        const materiSection = document.getElementById('materi-section');
+        const loadingMateri = document.getElementById('loading-materi');
+        const form = document.getElementById('lkpd-form');
+        const lkpdTbody = document.getElementById('lkpd-tbody');
+        const loadingLkpd = document.getElementById('loading-lkpd');
+        const messageDiv = document.getElementById('form-message');
+        const submitButton = document.getElementById('submit-button');
+        let globalSoalData = [];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchMateri();
+            fetchSoalLKPD();
+        });
+
+        function fetchMateri() {
+            fetch(scriptURL + "?action=getMateri")
+                .then(response => response.json())
+                .then(data => {
+                    if (data.result === 'success' && data.data.length > 0) {
+                        loadingMateri.style.display = 'none';
+                        buildMateri(data.data);
+                    } else { throw new Error('Tidak ada materi ditemukan.'); }
+                })
+                .catch(error => {
+                    loadingMateri.textContent = 'Gagal memuat materi: ' + error.message;
+                    loadingMateri.style.color = 'red';
+                });
+        }
+
+        function buildMateri(materiArray) {
+            let currentGrid = null, currentList = null;
+            materiArray.sort((a, b) => a.urutan - b.urutan);
+            materiArray.forEach(item => {
+                const tipe = item.tipe;
+                if (tipe !== 'grid_item' && currentGrid) { materiSection.appendChild(currentGrid); currentGrid = null; }
+                if (tipe !== 'list' && currentList) { materiSection.appendChild(currentList); currentList = null; }
+                if (tipe === 'h2') {
+                    const h2 = document.createElement('h2'); h2.innerHTML = item.konten_utama; materiSection.appendChild(h2);
+                } else if (tipe === 'h3') {
+                    const h3 = document.createElement('h3'); h3.innerHTML = item.konten_utama; materiSection.appendChild(h3);
+                } else if (tipe === 'p') {
+                    const p = document.createElement('p'); p.innerHTML = item.konten_utama; materiSection.appendChild(p);
+                } else if (tipe === 'list') {
+                    if (!currentList) { currentList = document.createElement('ul'); currentList.className = 'rangkuman-list'; }
+                    const li = document.createElement('li'); li.innerHTML = item.konten_utama; currentList.appendChild(li);
+                } else if (tipe === 'grid_item') {
+                    if (!currentGrid) { currentGrid = document.createElement('div'); currentGrid.className = 'hardware-grid'; }
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'hardware-item';
+                    itemDiv.innerHTML = `<img src="${item.gambar_url}" alt="${item.konten_utama}"><br><strong>${item.konten_utama}</strong><br>${item.konten_tambahan}`;
+                    currentGrid.appendChild(itemDiv);
+                }
+            });
+            if (currentGrid) materiSection.appendChild(currentGrid);
+            if (currentList) materiSection.appendChild(currentList);
+        }
+
+        function fetchSoalLKPD() {
+            fetch(scriptURL + "?action=getSoalLKPD")
+                .then(response => response.json())
+                .then(data => {
+                    if (data.result === 'success' && data.data.length > 0) {
+                        globalSoalData = data.data;
+                        buildLKPDForm(globalSoalData);
+                        loadingLkpd.style.display = 'none';
+                        submitButton.style.display = 'block';
+                    } else { throw new Error('Tidak ada soal ditemukan di database.'); }
+                })
+                .catch(error => {
+                    loadingLkpd.textContent = 'Gagal memuat soal: ' + error.message;
+                    loadingLkpd.style.color = 'red';
+                });
+        }
+
+        function buildLKPDForm(soalArray) {
+            lkpdTbody.innerHTML = '';
+            soalArray.sort((a, b) => a.id.localeCompare(b.id));
+            soalArray.forEach(soal => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><img src="${soal.gambar_url}" alt="Soal ${soal.id}"></td>
+                    <td>
+                        <select name="jawaban_${soal.id}" required>
+                            <option value="">-- Pilih Jawaban --</option>
+                            ${soal.opsi_pilihan.split(',').map(opsi => `<option value="${opsi}">${opsi}</option>`).join('')}
+                        </select>
+                    </td>`;
+                lkpdTbody.appendChild(tr);
+            });
+        }
+
+        form.addEventListener('submit', e => {
+            e.preventDefault();
+            submitButton.disabled = true;
+            messageDiv.textContent = 'Memeriksa dan mengirim jawaban...';
+            let skor = 0, totalSoal = globalSoalData.length;
+            const formData = new FormData(form);
+            globalSoalData.forEach(soal => {
+                const jawaban = form[`jawaban_${soal.id}`].value;
+                if (jawaban === soal.jawaban_benar) skor++;
+            });
+            const skorPersen = Math.round((skor / totalSoal) * 100);
+            formData.append('skor', skorPersen);
+            fetch(scriptURL, { method: 'POST', body: formData })
+                .then(r => r.json())
+                .then(d => {
+                    if (d.result === 'success') {
+                        messageDiv.textContent = `LKPD berhasil dikirim! Skor Anda: ${skorPersen} (Benar ${skor} dari ${totalSoal}).`;
+                        messageDiv.style.color = 'green'; form.reset();
+                    } else throw new Error(d.message);
+                })
+                .catch(e => { messageDiv.textContent = 'Gagal mengirim: ' + e.message; messageDiv.style.color = 'red'; submitButton.disabled = false; });
+        });
+    </script>
+</body>
+</html>
