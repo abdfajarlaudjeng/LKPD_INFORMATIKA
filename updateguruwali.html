@@ -1,205 +1,148 @@
 <!doctype html>
-<html lang="id" class="h-full">
+<html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Student Evaluation Monitor</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    .loading-spinner {
-      border: 3px solid #f3f4f6;
-      border-top: 3px solid #3b82f6;
-      border-radius: 50%;
-      width: 20px;
-      height: 20px;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistem Evaluasi Guru Wali Canva</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+.loading-spinner { border:3px solid #f3f4f6;border-top:3px solid #3b82f6;border-radius:50%;width:20px;height:20px;animation:spin 1s linear infinite; }
+@keyframes spin {0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+</style>
 </head>
-<body class="h-full bg-gradient-to-br from-blue-50 to-indigo-100 font-sans">
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 font-sans min-h-screen p-6">
 
-  <div class="min-h-full p-6">
-    <header class="bg-white rounded-lg shadow-md p-6 mb-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-3xl font-bold text-gray-800 mb-2">Student Evaluation Monitor</h1>
-          <div class="text-gray-600">
-            <p><span class="font-semibold">Guru Wali:</span> Ibu/Bapak Guru</p>
-            <p><span class="font-semibold">Kelas:</span> VII</p>
-            <p><span class="font-semibold">Semester:</span> Ganjil</p>
-          </div>
-        </div>
-        <div class="bg-blue-100 rounded-lg p-4 text-right">
-          <p class="text-sm text-blue-600 font-medium">Total Siswa</p>
-          <p id="total-students" class="text-2xl font-bold text-blue-800">0</p>
-        </div>
-      </div>
-    </header>
+<header class="bg-white p-6 rounded-lg shadow mb-6">
+  <h1 class="text-3xl font-bold text-gray-800 mb-2">📘 Sistem Evaluasi Guru Wali</h1>
+  <p class="text-gray-600">Input Data Guru dan Evaluasi Siswa</p>
+</header>
 
-    <!-- Statistik -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-      <div class="bg-white rounded-lg shadow-md p-6 text-center">
-        <h3 class="text-lg font-semibold text-gray-800 mb-2">Rata-rata Akademik</h3>
-        <p id="avg-academic" class="text-3xl font-bold text-green-600">0</p>
-      </div>
-      <div class="bg-white rounded-lg shadow-md p-6 text-center">
-        <h3 class="text-lg font-semibold text-gray-800 mb-2">Rata-rata Perilaku</h3>
-        <p id="avg-behavior" class="text-3xl font-bold text-blue-600">0</p>
-      </div>
-      <div class="bg-white rounded-lg shadow-md p-6 text-center">
-        <h3 class="text-lg font-semibold text-gray-800 mb-2">Rata-rata Kehadiran</h3>
-        <p id="avg-attendance" class="text-3xl font-bold text-purple-600">0%</p>
-      </div>
-    </div>
+<!-- FORM GURU -->
+<div class="bg-white rounded-lg shadow p-6 mb-6">
+  <h2 class="text-xl font-semibold mb-4 text-gray-800">🧑‍🏫 Input Data Guru</h2>
+  <form id="guru-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <input type="text" id="nama-guru" placeholder="Nama Guru" required class="border p-2 rounded">
+    <input type="text" id="kelas" placeholder="Kelas (misal: 7A)" required class="border p-2 rounded">
+    <input type="text" id="mapel" placeholder="Mata Pelajaran" required class="border p-2 rounded">
+    <input type="text" id="semester" placeholder="Semester (Ganjil/Genap)" required class="border p-2 rounded">
+    <button type="submit" id="save-guru" class="md:col-span-2 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">Simpan Data Guru</button>
+  </form>
+</div>
 
-    <!-- Form Input -->
-    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-xl font-semibold text-gray-800">Tambah Evaluasi Siswa</h2>
-        <button id="toggle-form" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">Tambah Siswa</button>
-      </div>
-      <form id="student-form" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-medium mb-1">Nama Siswa</label>
-          <input type="text" id="student-name" required class="w-full border p-2 rounded">
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Kelas</label>
-          <input type="text" id="student-class" required class="w-full border p-2 rounded">
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Nilai Akademik</label>
-          <input type="number" id="academic-score" min="0" max="100" required class="w-full border p-2 rounded">
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Nilai Perilaku</label>
-          <input type="number" id="behavior-score" min="0" max="100" required class="w-full border p-2 rounded">
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Kehadiran (%)</label>
-          <input type="number" id="attendance" min="0" max="100" required class="w-full border p-2 rounded">
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Semester</label>
-          <input type="text" id="semester" required class="w-full border p-2 rounded">
-        </div>
-        <div class="md:col-span-2">
-          <label class="block text-sm font-medium mb-1">Catatan</label>
-          <textarea id="notes" rows="3" class="w-full border p-2 rounded"></textarea>
-        </div>
-        <div class="md:col-span-2 flex gap-3">
-          <button type="submit" id="submit-btn" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded flex items-center gap-2">
-            <span>Simpan</span><div id="submit-loading" class="loading-spinner hidden"></div>
-          </button>
-          <button type="button" id="cancel-btn" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded">Batal</button>
-        </div>
-      </form>
-    </div>
-
-    <!-- Tabel Data -->
-    <div class="bg-white rounded-lg shadow-md p-6">
-      <h2 class="text-xl font-semibold text-gray-800 mb-4">Daftar Evaluasi Siswa</h2>
-      <div class="overflow-x-auto">
-        <table class="w-full table-auto">
-          <thead>
-            <tr class="bg-gray-50 text-left text-sm font-medium text-gray-700">
-              <th class="px-4 py-2">Nama</th>
-              <th class="px-4 py-2">Kelas</th>
-              <th class="px-4 py-2">Akademik</th>
-              <th class="px-4 py-2">Perilaku</th>
-              <th class="px-4 py-2">Kehadiran</th>
-              <th class="px-4 py-2">Semester</th>
-              <th class="px-4 py-2">Catatan</th>
-            </tr>
-          </thead>
-          <tbody id="students-table"></tbody>
-        </table>
-      </div>
-    </div>
+<!-- FORM SISWA -->
+<div class="bg-white rounded-lg shadow p-6 mb-6">
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="text-xl font-semibold text-gray-800">👩‍🎓 Tambah Evaluasi Siswa</h2>
+    <button id="toggle-form" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">Tambah Siswa</button>
   </div>
+  <form id="student-form" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
+    <input type="text" id="student-name" placeholder="Nama Siswa" required class="border p-2 rounded">
+    <input type="text" id="student-class" placeholder="Kelas (misal: 7A)" required class="border p-2 rounded">
+    <input type="number" id="academic-score" placeholder="Nilai Akademik (0-100)" required class="border p-2 rounded">
+    <input type="number" id="behavior-score" placeholder="Nilai Perilaku (0-100)" required class="border p-2 rounded">
+    <input type="number" id="attendance" placeholder="Kehadiran (%)" required class="border p-2 rounded">
+    <input type="text" id="student-semester" placeholder="Semester" required class="border p-2 rounded">
+    <textarea id="notes" rows="3" placeholder="Catatan Evaluasi" class="border p-2 rounded md:col-span-2"></textarea>
+    <button type="submit" id="submit-btn" class="md:col-span-2 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded flex items-center justify-center gap-2">
+      <span>Simpan Evaluasi</span><div id="submit-loading" class="loading-spinner hidden"></div>
+    </button>
+  </form>
+</div>
 
-  <script>
-  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxIwod6_TULYBIdfUgzmRjQ8Kfc88_XWUTzw4X3qIWmEgoG51pxFCU0Sf9qf2hjg0GO/exec"; // <== GANTI DENGAN URL DEPLOY GOOGLE SCRIPT
+<!-- TABEL -->
+<div class="bg-white rounded-lg shadow p-6">
+  <h2 class="text-xl font-semibold text-gray-800 mb-4">📄 Daftar Evaluasi Siswa</h2>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm text-left">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-2">Nama</th>
+          <th class="px-4 py-2">Kelas</th>
+          <th class="px-4 py-2">Akademik</th>
+          <th class="px-4 py-2">Perilaku</th>
+          <th class="px-4 py-2">Kehadiran</th>
+          <th class="px-4 py-2">Semester</th>
+          <th class="px-4 py-2">Catatan</th>
+        </tr>
+      </thead>
+      <tbody id="students-table"></tbody>
+    </table>
+  </div>
+</div>
 
-  let students = [];
+<script>
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbylQzSeyk_qkRwIePMDW88ZtBO-5XK5hYDRBGPTVu6jaQqtWuVA9bcsApfbSpaYGjQn/exec"; // Ganti dengan URL Web App kamu
+let students = [];
 
-  async function fetchStudents() {
-    try {
-      const res = await fetch(WEB_APP_URL);
-      students = await res.json();
-      renderStudents();
-      updateStats();
-    } catch (e) {
-      alert("Gagal memuat data siswa");
-    }
-  }
-
-  function renderStudents() {
-    const tbody = document.getElementById("students-table");
-    tbody.innerHTML = "";
-    students.forEach(s => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td class="px-4 py-2">${s.name}</td>
-        <td class="px-4 py-2">${s.class}</td>
-        <td class="px-4 py-2">${s.academic_score}</td>
-        <td class="px-4 py-2">${s.behavior_score}</td>
-        <td class="px-4 py-2">${s.attendance_percentage}%</td>
-        <td class="px-4 py-2">${s.semester}</td>
-        <td class="px-4 py-2">${s.notes}</td>`;
-      tbody.appendChild(tr);
-    });
-    document.getElementById("total-students").textContent = students.length;
-  }
-
-  function updateStats() {
-    if (students.length === 0) return;
-    const avg = (key) => students.reduce((s, v) => s + parseFloat(v[key] || 0), 0) / students.length;
-    document.getElementById("avg-academic").textContent = avg("academic_score").toFixed(1);
-    document.getElementById("avg-behavior").textContent = avg("behavior_score").toFixed(1);
-    document.getElementById("avg-attendance").textContent = avg("attendance_percentage").toFixed(1) + "%";
-  }
-
-  document.getElementById("toggle-form").addEventListener("click", () => {
-    document.getElementById("student-form").classList.toggle("hidden");
+document.getElementById("guru-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const guruData = {
+    type: "guru",
+    nama_guru: document.getElementById("nama-guru").value.trim(),
+    kelas: document.getElementById("kelas").value.trim(),
+    mapel: document.getElementById("mapel").value.trim(),
+    semester: document.getElementById("semester").value.trim()
+  };
+  await fetch(WEB_APP_URL, {
+    method: "POST",
+    body: JSON.stringify(guruData),
+    headers: {"Content-Type": "application/json"}
   });
+  alert("✅ Data guru berhasil disimpan!");
+});
 
-  document.getElementById("cancel-btn").addEventListener("click", () => {
-    document.getElementById("student-form").reset();
-    document.getElementById("student-form").classList.add("hidden");
+document.getElementById("toggle-form").addEventListener("click", () => {
+  document.getElementById("student-form").classList.toggle("hidden");
+});
+
+document.getElementById("student-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const data = {
+    type: "siswa",
+    student_id: "student_" + Date.now(),
+    name: document.getElementById("student-name").value.trim(),
+    class: document.getElementById("student-class").value.trim(),
+    academic_score: parseInt(document.getElementById("academic-score").value),
+    behavior_score: parseInt(document.getElementById("behavior-score").value),
+    attendance_percentage: parseInt(document.getElementById("attendance").value),
+    semester: document.getElementById("student-semester").value.trim(),
+    notes: document.getElementById("notes").value.trim(),
+    evaluation_date: new Date().toISOString()
+  };
+  document.getElementById("submit-loading").classList.remove("hidden");
+  await fetch(WEB_APP_URL, {
+    method: "POST",
+    body: JSON.stringify(data),
+    headers: {"Content-Type": "application/json"}
   });
+  document.getElementById("submit-loading").classList.add("hidden");
+  alert("✅ Data siswa berhasil disimpan!");
+  e.target.reset();
+  fetchStudents(data.class);
+});
 
-  document.getElementById("student-form").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const studentData = {
-      student_id: "student_" + Date.now(),
-      name: document.getElementById("student-name").value,
-      class: document.getElementById("student-class").value,
-      academic_score: parseInt(document.getElementById("academic-score").value),
-      behavior_score: parseInt(document.getElementById("behavior-score").value),
-      attendance_percentage: parseInt(document.getElementById("attendance").value),
-      semester: document.getElementById("semester").value,
-      notes: document.getElementById("notes").value,
-      evaluation_date: new Date().toISOString()
-    };
-    const res = await fetch(WEB_APP_URL, {
-      method: "POST",
-      body: JSON.stringify(studentData),
-      headers: {"Content-Type": "application/json"}
-    });
-    const result = await res.json();
-    if (result.success) {
-      alert("Data berhasil disimpan!");
-      fetchStudents();
-      e.target.reset();
-      document.getElementById("student-form").classList.add("hidden");
-    } else {
-      alert("Gagal menyimpan data!");
-    }
+async function fetchStudents(kelas) {
+  const res = await fetch(WEB_APP_URL + "?kelas=" + encodeURIComponent(kelas));
+  students = await res.json();
+  renderStudents();
+}
+
+function renderStudents() {
+  const tbody = document.getElementById("students-table");
+  tbody.innerHTML = "";
+  students.forEach(s => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="px-4 py-2">${s.name}</td>
+      <td class="px-4 py-2">${s.class}</td>
+      <td class="px-4 py-2">${s.academic_score}</td>
+      <td class="px-4 py-2">${s.behavior_score}</td>
+      <td class="px-4 py-2">${s.attendance_percentage}%</td>
+      <td class="px-4 py-2">${s.semester}</td>
+      <td class="px-4 py-2">${s.notes}</td>`;
+    tbody.appendChild(tr);
   });
-
-  fetchStudents();
-  </script>
+}
+</script>
 </body>
 </html>
