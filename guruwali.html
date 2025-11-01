@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Dasbor Guru Wali</title>
+    <title>Aplikasi Dasbor Wali Kelas</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -87,15 +87,14 @@
     <!-- Chosen Palette: "Educational Teal" (bg-gray-100, text-gray-800, accent-teal-600/700) -->
     <!-- Application Structure Plan: Struktur dasbor berbasis tab: Ringkasan, Daftar Siswa, Absensi, Nilai, dan Koneksi API. Struktur ini memetakan alur kerja wali kelas dan memprioritaskan fungsi utama. Semua data ditarik dari API Google Apps Script. -->
     <!-- Visualization & Content Choices: 1. Donut Chart (Dashboard) untuk demografi gender (Chart.js). 2. Bar Chart (Absensi) untuk total absensi kelas (Chart.js). 3. Radar Chart (Nilai) untuk perbandingan siswa vs rata-rata (Chart.js). 4. Tabel HTML Interaktif (Daftar Siswa). Semua menggunakan data dinamis yang diambil melalui fetch(). -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
 
         
         <header class="mb-8">
-            <h1 class="text-3xl md:text-4xl font-bold text-teal-700">Dasbor Guru Wali</h1>
-            <p class="text-lg text-gray-600">Selamat Datang, ABD.FAJAR LAUDJENG,S.Si</p>
+            <h1 class="text-3xl md:text-4xl font-bold text-teal-700">Dasbor Wali Kelas</h1>
+            <p class="text-lg text-gray-600">Selamat Datang, Wali Kelas 10A</p>
         </header>
 
         
@@ -222,7 +221,7 @@
                 <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200 space-y-4">
                     <h3 class="text-xl font-semibold text-teal-700">URL API Aktif</h3>
                     <p class="text-gray-700">Aplikasi ini mencoba mengambil data dari URL:</p>
-                    <code id="api-url-display" class="block p-3 bg-gray-50 border border-gray-300 rounded-lg text-sm break-all text-red-600 font-mono"></code>
+                    <code id="api-url-display" class="block p-3 bg-gray-50 border border-gray-300 rounded-lg text-sm break-all text-red-600 font-mono">URL_APPS_SCRIPT_ANDA_DI_SINI</code>
                     <p class="font-medium text-teal-600 mt-4">Jika data tidak muncul, pastikan URL di atas adalah URL Apps Script yang sudah dideploy sebagai 'Web App' dengan akses 'Anyone'.</p>
                 </div>
             </section>
@@ -245,40 +244,56 @@
     <script>
         
         
+        // GANTI placeholder ini dengan URL Apps Script Web App Anda (Langkah 3 dari tutorial)
         const SPREADSHEET_API_URL = "https://script.google.com/macros/s/AKfycbzIu2jIjZjyXEoKP0odW4lnLXuZNg94rN2X2Q42X3-QPS1wOqPwKLpCyHvbdWWnE8ir/exec"; 
         
         
         let appData = { students: [], attendance: [], grades: [] };
         let numStudents = 0;
-        const gradeLabels = ["Matematika", "B. Indonesia", "B. Inggris", "IPA", "IPS"];
-        const classAvgGrades = { mat: 0, b_ind: 0, b_ing: 0, ipa: 0, ips: 0 };
-        const charts = {};
+        
+        // Daftar Mata Pelajaran (Label Tampilan)
+        const gradeLabels = ["Matematika", "B. Indonesia", "B. Inggris", "IPA", "IPS", "Informatika", "PKN", "Prakarya", "P. Agama Islam", "P. Agama Kristen", "Seni Budaya", "Penjas"];
+        
+        // Daftar Kunci/Key Data (Harus sesuai dengan header kolom di Spreadsheet)
+        const subjectKeys = ["mat", "b_ind", "b_ing", "ipa", "ips", "inf", "pkn", "prak", "pai", "pak", "senbud", "penjas"];
+        const TOTAL_SUBJECTS = subjectKeys.length;
+
+        // Inisialisasi Rata-rata Kelas
+        const classAvgGrades = {};
+        subjectKeys.forEach(key => classAvgGrades[key] = 0);
+
 
         
         function calculateClassAverages() {
             if (appData.grades.length === 0) return;
 
-            let totalMat = 0, totalInd = 0, totalIng = 0, totalIpa = 0, totalIps = 0;
+            const totals = {};
+            subjectKeys.forEach(key => totals[key] = 0);
+            
             appData.grades.forEach(g => {
-                totalMat += g.mat || 0;
-                totalInd += g.b_ind || 0;
-                totalIng += g.b_ing || 0;
-                totalIpa += g.ipa || 0;
-                totalIps += g.ips || 0;
+                subjectKeys.forEach(key => {
+                    // Pastikan nilai adalah angka atau 0 jika tidak ada
+                    totals[key] += g[key] || 0;
+                });
             });
+
             numStudents = appData.students.length;
 
-            classAvgGrades.mat = parseFloat((totalMat / numStudents).toFixed(2));
-            classAvgGrades.b_ind = parseFloat((totalInd / numStudents).toFixed(2));
-            classAvgGrades.b_ing = parseFloat((totalIng / numStudents).toFixed(2));
-            classAvgGrades.ipa = parseFloat((totalIpa / numStudents).toFixed(2));
-            classAvgGrades.ips = parseFloat((totalIps / numStudents).toFixed(2));
+            subjectKeys.forEach(key => {
+                classAvgGrades[key] = parseFloat((totals[key] / numStudents).toFixed(2));
+            });
         }
         
         function getStudentAvgGrade(studentId) {
             const g = appData.grades.find(g => g.id_siswa === studentId);
             if (!g) return 0;
-            return parseFloat(((g.mat + g.b_ind + g.b_ing + g.ipa + g.ips) / 5).toFixed(2));
+            
+            let sum = 0;
+            subjectKeys.forEach(key => {
+                sum += g[key] || 0;
+            });
+            
+            return parseFloat((sum / TOTAL_SUBJECTS).toFixed(2));
         }
 
         
@@ -322,6 +337,7 @@
                 const avgGrade = getStudentAvgGrade(idNum);
                 const alfaCount = (att && att.alfa) ? att.alfa : 0;
 
+                // Kriteria: Alfa > 3 atau rata-rata nilai < 70
                 if (alfaCount > 3 || (avgGrade > 0 && avgGrade < 70)) {
                     const li = document.createElement("li");
                     li.textContent = `${s.nama} (Alfa: ${alfaCount}, Rata-rata: ${avgGrade})`;
@@ -384,6 +400,14 @@
             const a_sakit = (att && att.sakit) || 0;
             const a_izin = (att && att.izin) || 0;
             const a_alfa = (att && att.alfa) || 0;
+            
+            // Generate list of all 12 grades dynamically
+            let gradesHtmlList = '';
+            subjectKeys.forEach((key, index) => {
+                const grade = grades ? grades[key] || '-' : '-';
+                gradesHtmlList += `<li>${gradeLabels[index]}: <span class="font-bold">${grade}</span></li>`;
+            });
+
 
             modalBody.innerHTML = `
                 <div class="grid grid-cols-2 gap-4">
@@ -412,13 +436,9 @@
                     </div>
                 </div>
                 <hr>
-                <h4 class="font-semibold text-gray-700">Nilai Akhir:</h4>
-                <ul class="list-disc list-inside space-y-1">
-                    <li>Matematika: <span class="font-bold">${grades ? grades.mat || '-' : '-'}</span></li>
-                    <li>B. Indonesia: <span class="font-bold">${grades ? grades.b_ind || '-' : '-'}</span></li>
-                    <li>B. Inggris: <span class="font-bold">${grades ? grades.b_ing || '-' : '-'}</span></li>
-                    <li>IPA: <span class="font-bold">${grades ? grades.ipa || '-' : '-'}</span></li>
-                    <li>IPS: <span class="font-bold">${grades ? grades.ips || '-' : '-'}</span></li>
+                <h4 class="font-semibold text-gray-700">Nilai Akhir (Rata-rata: ${getStudentAvgGrade(idNum)}):</h4>
+                <ul class="list-disc list-inside space-y-1 text-sm md:text-base grid grid-cols-2 sm:grid-cols-3">
+                    ${gradesHtmlList}
                 </ul>
                 <hr>
                 <p class='text-gray-500'>*Data catatan spesifik tidak disertakan dalam skrip Apps dasar ini, tetapi dapat ditambahkan.</p>
@@ -487,12 +507,14 @@
                 updateNilaiChart(e.target.value);
             };
             
-            
+            // Data untuk rata-rata kelas (default view)
+            const avgDataValues = subjectKeys.map(key => classAvgGrades[key]);
+
             const nilaiData = {
                 labels: gradeLabels,
                 datasets: [{
                     label: 'Rata-Rata Kelas',
-                    data: Object.values(classAvgGrades),
+                    data: avgDataValues,
                     fill: true,
                     backgroundColor: 'rgba(13, 148, 136, 0.2)',
                     borderColor: '#0d9488',
@@ -526,9 +548,12 @@
         }
         
         function updateNilaiChart(studentId) {
+            // Data untuk Rata-rata Kelas
+            const avgDataValues = subjectKeys.map(key => classAvgGrades[key]);
+            
             const datasets = [{
                 label: 'Rata-Rata Kelas',
-                data: Object.values(classAvgGrades),
+                data: avgDataValues,
                 fill: true,
                 backgroundColor: 'rgba(13, 148, 136, 0.2)',
                 borderColor: '#0d9488',
@@ -542,9 +567,12 @@
                 const grades = appData.grades.find(g => g.id_siswa === id);
                 
                 if (grades && student) {
+                    // Data untuk Siswa yang dipilih
+                    const studentDataValues = subjectKeys.map(key => grades[key] || 0);
+                    
                     datasets.push({
                         label: student.nama,
-                        data: [grades.mat, grades.b_ind, grades.b_ing, grades.ipa, grades.ips].map(val => val || 0),
+                        data: studentDataValues,
                         fill: true,
                         backgroundColor: 'rgba(59, 130, 246, 0.2)',
                         borderColor: '#3b82f6',
