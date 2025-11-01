@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Dasbor Wali Kelas</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    
+    <style>
+        
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f7f6;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        
+        .tab-button {
+            transition: all 0.3s ease;
+        }
+        
+        .tab-button.active {
+            background-color: #0d9488; 
+            color: white;
+            border-color: #0d9488;
+        }
+        
+        .tab-button:not(.active):hover {
+            background-color: #f0fdfa;
+            color: #0f766e;
+        }
+        
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 300px;
+            }
+        }
+
+        
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 40;
+        }
+        .modal-content {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 50;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-overlay.active, .modal-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    
+    <!-- Chosen Palette: "Educational Teal" (bg-gray-100, text-gray-800, accent-teal-600/700) -->
+    <!-- Application Structure Plan: Struktur dasbor berbasis tab: Ringkasan, Daftar Siswa, Absensi, Nilai, dan Koneksi API. Struktur ini memetakan alur kerja wali kelas dan memprioritaskan fungsi utama. Semua data ditarik dari API Google Apps Script. -->
+    <!-- Visualization & Content Choices: 1. Donut Chart (Dashboard) untuk demografi gender (Chart.js). 2. Bar Chart (Absensi) untuk total absensi kelas (Chart.js). 3. Radar Chart (Nilai) untuk perbandingan siswa vs rata-rata (Chart.js). 4. Tabel HTML Interaktif (Daftar Siswa). Semua menggunakan data dinamis yang diambil melalui fetch(). -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+
+        
+        <header class="mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-teal-700">Dasbor Wali Kelas</h1>
+            <p class="text-lg text-gray-600">Selamat Datang, Wali Kelas 10A</p>
+        </header>
+
+        
+        <nav id="tab-nav" class="flex flex-wrap border-b border-gray-300 mb-6">
+            <button class="tab-button active text-sm md:text-base py-3 px-4 md:px-6 font-medium text-gray-600 border-b-2 border-transparent" data-tab="ringkasan">
+                Ringkasan
+            </button>
+            <button class="tab-button text-sm md:text-base py-3 px-4 md:px-6 font-medium text-gray-600 border-b-2 border-transparent" data-tab="siswa">
+                Daftar Siswa
+            </button>
+            <button class="tab-button text-sm md:text-base py-3 px-4 md:px-6 font-medium text-gray-600 border-b-2 border-transparent" data-tab="absensi">
+                Absensi
+            </button>
+            <button class="tab-button text-sm md:text-base py-3 px-4 md:px-6 font-medium text-gray-600 border-b-2 border-transparent" data-tab="nilai">
+                Nilai
+            </button>
+            <button class="tab-button text-sm md:text-base py-3 px-4 md:px-6 font-medium text-gray-600 border-b-2 border-transparent" data-tab="penyimpanan">
+                Koneksi API
+            </button>
+        </nav>
+
+        
+        <div id="loading-indicator" class="text-center p-12 bg-white rounded-xl shadow-lg border border-teal-200">
+            <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-teal-500 mx-auto mb-4"></div>
+            <p class="text-xl font-medium text-teal-600">Memuat data dari Google Spreadsheet...</p>
+            <p class="text-gray-500 mt-2">Pastikan Apps Script sudah dideploy dengan benar.</p>
+        </div>
+
+        
+        <div id="error-message" class="hidden p-6 bg-red-100 border border-red-400 text-red-700 rounded-xl shadow-lg mb-6">
+            <h3 class="font-bold">Gagal Memuat Data!</h3>
+            <p id="error-details"></p>
+            <p class="mt-2 text-sm">Cek URL Apps Script, pastikan sudah dideploy, dan aksesnya disetel ke 'Anyone'.</p>
+        </div>
+
+        
+        <main id="tab-container" class="hidden">
+            
+            <section id="tab-ringkasan" class="tab-content active">
+                <h2 class="text-2xl font-semibold mb-4 text-teal-800">Ringkasan Kelas</h2>
+                <p class="mb-6 text-gray-700">Ringkasan singkat tentang demografi dan statistik utama kelas Anda yang diambil langsung dari Spreadsheet.</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    
+                    <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200 flex flex-col justify-center items-center">
+                        <span class="text-4xl font-bold text-teal-600" id="total-siswa">...</span>
+                        <span class="text-lg text-gray-600 mt-2">Total Siswa</span>
+                    </div>
+                    
+                    <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+                        <h3 class="text-xl font-semibold mb-4 text-center text-gray-700">Demografi Gender</h3>
+                        <div class="chart-container h-64 md:h-64">
+                            <canvas id="genderChart"></canvas>
+                        </div>
+                    </div>
+
+                    
+                    <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+                        <h3 class="text-xl font-semibold mb-4 text-gray-700">Siswa Perlu Perhatian</h3>
+                        <p class="text-gray-600 mb-4">Siswa dengan absensi (Alfa) > 3 atau rata-rata nilai < 70.</p>
+                        <ul id="attention-list" class="list-disc list-inside space-y-2 text-red-600">
+                            <li>Memuat...</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            
+            <section id="tab-siswa" class="tab-content">
+                <h2 class="text-2xl font-semibold mb-4 text-teal-800">Daftar Siswa</h2>
+                <p class="mb-6 text-gray-700">Kelola dan lihat detail untuk setiap siswa di kelas Anda. Klik pada nama siswa untuk melihat rincian lebih lanjut.</p>
+                <div class="mb-4">
+                    <input type="text" id="search-siswa" class="w-full md:w-1/2 p-3 border border-gray-300 rounded-lg" placeholder="Cari nama siswa...">
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200 overflow-x-auto">
+                    <table class="w-full min-w-full">
+                        <thead class="border-b-2 border-gray-300">
+                            <tr>
+                                <th class="p-3 text-left text-sm font-semibold text-gray-600 uppercase">NIS</th>
+                                <th class="p-3 text-left text-sm font-semibold text-gray-600 uppercase">Nama</th>
+                                <th class="p-3 text-left text-sm font-semibold text-gray-600 uppercase">Gender</th>
+                                <th class="p-3 text-left text-sm font-semibold text-gray-600 uppercase">Kota</th>
+                            </tr>
+                        </thead>
+                        <tbody id="siswa-table-body">
+                            <tr><td colspan="4" class="p-4 text-center text-gray-500">Memuat data siswa...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            
+            <section id="tab-absensi" class="tab-content">
+                <h2 class="text-2xl font-semibold mb-4 text-teal-800">Visualisasi Absensi</h2>
+                <p class="mb-6 text-gray-700">Tinjauan visual dari catatan absensi seluruh kelas yang diambil dari sheet 'Absensi'.</p>
+                <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+                    <h3 class="text-xl font-semibold mb-4 text-center text-gray-700">Total Absensi Kelas (Semester)</h3>
+                    <div class="chart-container">
+                        <canvas id="absensiChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            
+            <section id="tab-nilai" class="tab-content">
+                <h2 class="text-2xl font-semibold mb-4 text-teal-800">Perbandingan Nilai</h2>
+                <p class="mb-6 text-gray-700">Bandingkan nilai siswa individu dengan rata-rata kelas di berbagai mata pelajaran dari sheet 'Nilai'.</p>
+                <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+                    <div class="mb-4">
+                        <label for="student-select-nilai" class="block text-sm font-medium text-gray-700 mb-2">Pilih Siswa:</label>
+                        <select id="student-select-nilai" class="w-full md:w-1/2 p-3 border border-gray-300 rounded-lg">
+                            <option value="avg">Tampilkan Rata-Rata Kelas</option>
+                        </select>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="nilaiChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            
+            <section id="tab-penyimpanan" class="tab-content">
+                <h2 class="text-2xl font-semibold mb-4 text-teal-800">Koneksi API Google Apps Script</h2>
+                <p class="mb-6 text-gray-700">Aplikasi ini sekarang terintegrasi! Di sinilah Anda dapat mengonfirmasi URL yang digunakan untuk mengambil data.</p>
+                <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200 space-y-4">
+                    <h3 class="text-xl font-semibold text-teal-700">URL API Aktif</h3>
+                    <p class="text-gray-700">Aplikasi ini mencoba mengambil data dari URL:</p>
+                    <code id="api-url-display" class="block p-3 bg-gray-50 border border-gray-300 rounded-lg text-sm break-all text-red-600 font-mono"></code>
+                    <p class="font-medium text-teal-600 mt-4">Jika data tidak muncul, pastikan URL di atas adalah URL Apps Script yang sudah dideploy sebagai 'Web App' dengan akses 'Anyone'.</p>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    
+    <div id="modal-overlay" class="modal-overlay"></div>
+    <div id="modal-content" class="modal-content bg-white rounded-xl shadow-2xl p-6 md:p-8">
+        <div class="flex justify-between items-center mb-4">
+            <h2 id="modal-title" class="text-2xl font-bold text-teal-700">Detail Siswa</h2>
+            <button id="modal-close" class="text-gray-500 hover:text-gray-800 text-3xl">&times;</button>
+        </div>
+        <div id="modal-body" class="space-y-4">
+            
+        </div>
+    </div>
+
+    <script>
+        
+        
+        const SPREADSHEET_API_URL = "URL_APPS_SCRIPT_ANDA_DI_SINI"; 
+        
+        
+        let appData = { students: [], attendance: [], grades: [] };
+        let numStudents = 0;
+        const gradeLabels = ["Matematika", "B. Indonesia", "B. Inggris", "IPA", "IPS"];
+        const classAvgGrades = { mat: 0, b_ind: 0, b_ing: 0, ipa: 0, ips: 0 };
+        const charts = {};
+
+        
+        function calculateClassAverages() {
+            if (appData.grades.length === 0) return;
+
+            let totalMat = 0, totalInd = 0, totalIng = 0, totalIpa = 0, totalIps = 0;
+            appData.grades.forEach(g => {
+                totalMat += g.mat || 0;
+                totalInd += g.b_ind || 0;
+                totalIng += g.b_ing || 0;
+                totalIpa += g.ipa || 0;
+                totalIps += g.ips || 0;
+            });
+            numStudents = appData.students.length;
+
+            classAvgGrades.mat = parseFloat((totalMat / numStudents).toFixed(2));
+            classAvgGrades.b_ind = parseFloat((totalInd / numStudents).toFixed(2));
+            classAvgGrades.b_ing = parseFloat((totalIng / numStudents).toFixed(2));
+            classAvgGrades.ipa = parseFloat((totalIpa / numStudents).toFixed(2));
+            classAvgGrades.ips = parseFloat((totalIps / numStudents).toFixed(2));
+        }
+        
+        function getStudentAvgGrade(studentId) {
+            const g = appData.grades.find(g => g.id_siswa === studentId);
+            if (!g) return 0;
+            return parseFloat(((g.mat + g.b_ind + g.b_ing + g.ipa + g.ips) / 5).toFixed(2));
+        }
+
+        
+        function renderDashboard() {
+            if (numStudents === 0) return;
+            
+            document.getElementById("total-siswa").innerText = numStudents;
+
+            
+            const males = appData.students.filter(s => s.gender && s.gender.toUpperCase().startsWith('L')).length;
+            const females = numStudents - males;
+            const genderData = {
+                labels: ['Laki-laki', 'Perempuan'],
+                datasets: [{
+                    data: [males, females],
+                    backgroundColor: ['#0d9488', '#14b8a6'],
+                    hoverBackgroundColor: ['#0f766e', '#0d9488']
+                }]
+            };
+            if (charts.gender) charts.gender.destroy();
+            charts.gender = new Chart(document.getElementById('genderChart').getContext('2d'), {
+                type: 'doughnut',
+                data: genderData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+
+            
+            const attentionList = document.getElementById("attention-list");
+            attentionList.innerHTML = "";
+            let attentionCount = 0;
+            
+            appData.students.forEach(s => {
+                const idNum = parseInt(s.id); 
+                const att = appData.attendance.find(a => a.id_siswa === idNum);
+                const avgGrade = getStudentAvgGrade(idNum);
+                const alfaCount = (att && att.alfa) ? att.alfa : 0;
+
+                if (alfaCount > 3 || (avgGrade > 0 && avgGrade < 70)) {
+                    const li = document.createElement("li");
+                    li.textContent = `${s.nama} (Alfa: ${alfaCount}, Rata-rata: ${avgGrade})`;
+                    attentionList.appendChild(li);
+                    attentionCount++;
+                }
+            });
+            if (attentionCount === 0) {
+                 attentionList.innerHTML = "<li class='text-gray-500'>Tidak ada siswa yang memerlukan perhatian khusus saat ini.</li>";
+            }
+        }
+
+        
+        function renderSiswaTable(filterText = "") {
+            const tableBody = document.getElementById("siswa-table-body");
+            tableBody.innerHTML = "";
+            
+            const filteredStudents = appData.students.filter(s => 
+                s.nama && s.nama.toLowerCase().includes(filterText.toLowerCase())
+            );
+
+            if (filteredStudents.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">Tidak ada siswa ditemukan.</td></tr>`;
+                return;
+            }
+
+            filteredStudents.forEach(s => {
+                const row = document.createElement("tr");
+                row.className = "border-b border-gray-200 hover:bg-gray-100 cursor-pointer";
+                row.dataset.id = s.id;
+                
+                const genderDisplay = s.gender && s.gender.toUpperCase().startsWith('P') ? 'Perempuan' : 'Laki-laki';
+
+                row.innerHTML = `
+                    <td class="p-3">${s.nis || '-'}</td>
+                    <td class="p-3 font-medium text-teal-700">${s.nama || 'Nama Tidak Ada'}</td>
+                    <td class="p-3">${genderDisplay}</td>
+                    <td class="p-3">${s.kota || '-'}</td>
+                `;
+                row.addEventListener("click", () => showStudentDetail(s.id));
+                tableBody.appendChild(row);
+            });
+        }
+        
+        
+        function showStudentDetail(studentId) {
+            const idNum = parseInt(studentId);
+            const student = appData.students.find(s => s.id === idNum);
+            const att = appData.attendance.find(a => a.id_siswa === idNum);
+            const grades = appData.grades.find(g => g.id_siswa === idNum);
+
+            if (!student) return; 
+
+            const modalTitle = document.getElementById("modal-title");
+            const modalBody = document.getElementById("modal-body");
+            
+            modalTitle.innerText = student.nama || 'Detail Siswa';
+            
+            const a_hadir = (att && att.hadir) || 0;
+            const a_sakit = (att && att.sakit) || 0;
+            const a_izin = (att && att.izin) || 0;
+            const a_alfa = (att && att.alfa) || 0;
+
+            modalBody.innerHTML = `
+                <div class="grid grid-cols-2 gap-4">
+                    <div><span class="font-semibold">NIS:</span> ${student.nis || '-'}</div>
+                    <div><span class="font-semibold">Gender:</span> ${student.gender && student.gender.toUpperCase().startsWith('P') ? 'Perempuan' : 'Laki-laki'}</div>
+                </div>
+                <div><span class="font-semibold">Alamat:</span> ${student.alamat || '-'}</div>
+                <hr>
+                <h4 class="font-semibold text-gray-700">Absensi (Total Hari):</h4>
+                <div class="grid grid-cols-4 gap-2 text-center">
+                    <div class="bg-green-100 p-2 rounded-lg">
+                        <div class="text-2xl font-bold text-green-700">${a_hadir}</div>
+                        <div class="text-sm">Hadir</div>
+                    </div>
+                    <div class="bg-yellow-100 p-2 rounded-lg">
+                        <div class="text-2xl font-bold text-yellow-700">${a_sakit}</div>
+                        <div class="text-sm">Sakit</div>
+                    </div>
+                    <div class="bg-blue-100 p-2 rounded-lg">
+                        <div class="text-2xl font-bold text-blue-700">${a_izin}</div>
+                        <div class="text-sm">Izin</div>
+                    </div>
+                    <div class="bg-red-100 p-2 rounded-lg">
+                        <div class="text-2xl font-bold text-red-700">${a_alfa}</div>
+                        <div class="text-sm">Alfa</div>
+                    </div>
+                </div>
+                <hr>
+                <h4 class="font-semibold text-gray-700">Nilai Akhir:</h4>
+                <ul class="list-disc list-inside space-y-1">
+                    <li>Matematika: <span class="font-bold">${grades ? grades.mat || '-' : '-'}</span></li>
+                    <li>B. Indonesia: <span class="font-bold">${grades ? grades.b_ind || '-' : '-'}</span></li>
+                    <li>B. Inggris: <span class="font-bold">${grades ? grades.b_ing || '-' : '-'}</span></li>
+                    <li>IPA: <span class="font-bold">${grades ? grades.ipa || '-' : '-'}</span></li>
+                    <li>IPS: <span class="font-bold">${grades ? grades.ips || '-' : '-'}</span></li>
+                </ul>
+                <hr>
+                <p class='text-gray-500'>*Data catatan spesifik tidak disertakan dalam skrip Apps dasar ini, tetapi dapat ditambahkan.</p>
+            `;
+            
+            document.getElementById("modal-overlay").classList.add("active");
+            document.getElementById("modal-content").classList.add("active");
+        }
+        
+        function closeModal() {
+            document.getElementById("modal-overlay").classList.remove("active");
+            document.getElementById("modal-content").classList.remove("active");
+        }
+
+        
+        function renderAbsensi() {
+            let totalHadir = 0, totalSakit = 0, totalIzin = 0, totalAlfa = 0;
+            appData.attendance.forEach(att => {
+                totalHadir += att.hadir || 0;
+                totalSakit += att.sakit || 0;
+                totalIzin += att.izin || 0;
+                totalAlfa += att.alfa || 0;
+            });
+
+            const absensiData = {
+                labels: ['Hadir', 'Sakit', 'Izin', 'Alfa (Tanpa Ket.)'],
+                datasets: [{
+                    label: 'Total Absensi Kelas',
+                    data: [totalHadir, totalSakit, totalIzin, totalAlfa],
+                    backgroundColor: ['#10b981', '#f59e0b', '#3b82f6', '#ef4444'],
+                }]
+            };
+
+            if (charts.absensi) charts.absensi.destroy();
+            charts.absensi = new Chart(document.getElementById('absensiChart').getContext('2d'), {
+                type: 'bar',
+                data: absensiData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: 'Total Akumulasi Absensi Satu Semester' }
+                    },
+                    scales: {
+                        x: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+        
+        
+        function renderNilai() {
+            
+            const studentSelect = document.getElementById("student-select-nilai");
+            studentSelect.innerHTML = `<option value="avg">Tampilkan Rata-Rata Kelas</option>`;
+            appData.students.forEach(s => {
+                const option = document.createElement("option");
+                option.value = s.id;
+                option.text = s.nama;
+                studentSelect.appendChild(option);
+            });
+            
+            studentSelect.onchange = (e) => {
+                updateNilaiChart(e.target.value);
+            };
+            
+            
+            const nilaiData = {
+                labels: gradeLabels,
+                datasets: [{
+                    label: 'Rata-Rata Kelas',
+                    data: Object.values(classAvgGrades),
+                    fill: true,
+                    backgroundColor: 'rgba(13, 148, 136, 0.2)',
+                    borderColor: '#0d9488',
+                    pointBackgroundColor: '#0d9488',
+                    pointBorderColor: '#fff',
+                }]
+            };
+            
+            if (charts.nilai) charts.nilai.destroy();
+            charts.nilai = new Chart(document.getElementById('nilaiChart').getContext('2d'), {
+                type: 'radar',
+                data: nilaiData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { display: true },
+                            suggestedMin: 50,
+                            suggestedMax: 100,
+                            pointLabels: {
+                                font: { size: 13 }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+        
+        function updateNilaiChart(studentId) {
+            const datasets = [{
+                label: 'Rata-Rata Kelas',
+                data: Object.values(classAvgGrades),
+                fill: true,
+                backgroundColor: 'rgba(13, 148, 136, 0.2)',
+                borderColor: '#0d9488',
+                pointBackgroundColor: '#0d9488',
+                pointBorderColor: '#fff',
+            }];
+            
+            if (studentId !== "avg") {
+                const id = parseInt(studentId);
+                const student = appData.students.find(s => s.id === id);
+                const grades = appData.grades.find(g => g.id_siswa === id);
+                
+                if (grades && student) {
+                    datasets.push({
+                        label: student.nama,
+                        data: [grades.mat, grades.b_ind, grades.b_ing, grades.ipa, grades.ips].map(val => val || 0),
+                        fill: true,
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderColor: '#3b82f6',
+                        pointBackgroundColor: '#3b82f6',
+                        pointBorderColor: '#fff',
+                    });
+                }
+            }
+            
+            charts.nilai.data.datasets = datasets;
+            charts.nilai.update();
+        }
+
+        
+        async function fetchData() {
+            const loading = document.getElementById("loading-indicator");
+            const mainContainer = document.getElementById("tab-container");
+            const errorDiv = document.getElementById("error-message");
+            const errorDetails = document.getElementById("error-details");
+            
+            document.getElementById("api-url-display").textContent = SPREADSHEET_API_URL;
+
+            if (SPREADSHEET_API_URL === "https://script.google.com/macros/s/AKfycbzPbgVvcI-F35emgVMY8vLqI-CQ90CiGQzu7H5Z3vi20amLYyepyRwABDHvP89oAvbN/exec") {
+                errorDetails.textContent = "Error: URL API belum disetel. Ganti placeholder di kode JS dengan URL Web App Apps Script Anda.";
+                loading.classList.add("hidden");
+                errorDiv.classList.remove("hidden");
+                return;
+            }
+
+            try {
+                const response = await fetch(SPREADSHEET_API_URL);
+                if (!response.ok) {
+                    throw new Error(`Kesalahan HTTP: ${response.status}`);
+                }
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(`Apps Script Error: ${data.error}`);
+                }
+
+                // Simpan data global
+                appData = data;
+                
+                // Pastikan id di data attendance dan grades adalah integer (karena dibaca sebagai angka dari sheet)
+                appData.attendance = appData.attendance.map(a => ({...a, id_siswa: parseInt(a.id_siswa)}));
+                appData.grades = appData.grades.map(g => ({...g, id_siswa: parseInt(g.id_siswa)}));
+                appData.students = appData.students.map(s => ({...s, id: parseInt(s.id)}));
+
+                // Lanjutkan inisialisasi setelah data dimuat
+                calculateClassAverages();
+                renderDashboard();
+                renderSiswaTable();
+                renderAbsensi();
+                renderNilai();
+                
+                loading.classList.add("hidden");
+                mainContainer.classList.remove("hidden");
+                
+            } catch (error) {
+                errorDetails.textContent = `Gagal memuat data dari API. Detail: ${error.message}`;
+                loading.classList.add("hidden");
+                errorDiv.classList.remove("hidden");
+            }
+        }
+
+        
+        function initNav() {
+            const nav = document.getElementById("tab-nav");
+            const contents = document.getElementById("tab-container").children;
+            const buttons = nav.querySelectorAll(".tab-button");
+
+            nav.addEventListener("click", (e) => {
+                const target = e.target.closest(".tab-button");
+                if (!target) return;
+
+                
+                buttons.forEach(btn => btn.classList.remove("active"));
+                target.classList.add("active");
+
+                
+                const tabId = "tab-" + target.dataset.tab;
+                for (let content of contents) {
+                    if (content.id === tabId) {
+                        content.classList.add("active");
+                    } else {
+                        content.classList.remove("active");
+                    }
+                }
+            });
+        }
+        
+        
+        document.addEventListener("DOMContentLoaded", () => {
+            
+            initNav();
+
+            
+            document.getElementById("search-siswa").addEventListener("input", (e) => {
+                renderSiswaTable(e.target.value);
+            });
+            
+            document.getElementById("modal-close").addEventListener("click", closeModal);
+            document.getElementById("modal-overlay").addEventListener("click", closeModal);
+
+            
+            fetchData();
+        });
+
+    </script>
+</body>
+</html>
