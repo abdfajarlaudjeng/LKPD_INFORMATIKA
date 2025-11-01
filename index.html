@@ -6,25 +6,63 @@
     <title>Input Data - Aplikasi Lingkungan</title>
     <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; background-color: #f4f4f4; margin: 0; padding: 0; }
-        header { background-color: #00796b; color: #ffffff; padding: 1rem; text-align: center; }
+
+        header { background-color: #00796b; color: #ffffff; padding: 1rem; text-align: center; position: relative; }
+        header img { position: absolute; top: 50%; transform: translateY(-50%); height: 80px; } /* diperbesar dari 60px */
+        header img.left-logo { left: 20px; }
+        header img.right-logo { right: 20px; }
+        header h2, header h1, header p { margin: 0; color: #fff; }
+        header h2 { font-size: 1.3rem; font-weight: bold; } /* sedikit lebih besar */
+        header h1 { font-size: 1.5rem; }
+        header p { font-size: 0.9rem; }
+
         nav { background: #333; color: #fff; padding: 0.5rem; text-align: center; }
-        nav a { color: #fff; padding: 0.5rem 1rem; text-decoration: none; }
+        nav a { color: #fff; padding: 0.5rem 1rem; text-decoration: none; display: inline-block; margin: 2px; }
         nav a:hover { background: #555; }
         nav a.active { background-color: #00796b; font-weight: bold; }
+
         main { max-width: 900px; margin: 1rem auto; padding: 1rem; }
         section { background: #fff; margin-bottom: 1rem; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        h2 { color: #00796b; border-bottom: 2px solid #f4f4f4; padding-bottom: 0.5rem; }
+        h2 { color: #00796b; padding-bottom: 0.5rem; }
+
         form div { margin-bottom: 1rem; }
         form label { display: block; margin-bottom: 0.3rem; font-weight: bold; }
         form input[type="text"], form input[type="number"], form select, form textarea {
             width: 100%; padding: 0.5rem; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;
         }
         form button { background: #00796b; color: #fff; padding: 0.7rem 1.5rem; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; }
+        form button:hover { background: #004d40; }
+
+        #loading-materi, #loading-lkpd { text-align: center; font-style: italic; color: #555; }
+
+        #lkpd-form table { width: 100%; border-collapse: collapse; }
+        #lkpd-form th, #lkpd-form td { padding: 10px; border: 1px solid #ddd; text-align: left; vertical-align: middle; }
+        #lkpd-form th:first-child, #lkpd-form td:first-child { width: 150px; text-align: center; }
+        #lkpd-form img { width: 120px; height: 120px; object-fit: contain; border-radius: 4px; }
+        #lkpd-form select { width: 100%; padding: 8px; font-size: 1rem; border-radius: 4px; }
+
+        .form-grup { margin-bottom: 1rem; }
+        .form-grup label { display: block; margin-bottom: 0.3rem; font-weight: bold; }
+        .form-grup input[type="text"] { width: 100%; padding: 0.5rem; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+
+        #form-message { margin-top: 15px; font-weight: bold; font-size: 1.2rem; text-align: center; }
+
         footer { text-align: center; padding: 1rem; background: #333; color: #fff; margin-top: 2rem; }
+
+        @media (max-width: 600px){
+            header img { position: static; transform: none; display: block; margin: 0.5rem auto; }
+        }
     </style>
 </head>
 <body>
-    <header><h1>Sistem Analisis Data Lingkungan Sekolah</h1></header>
+    <header>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/e/e5/Lambang_Kabupaten_Donggala_%282015-sekarang%29.png" alt="Logo Kabupaten Donggala" class="left-logo">
+        <img src="smpn10.jpg" alt="Logo Sekolah" class="right-logo">
+        <h2>PEMERINTAH KABUPATEN DONGGALA</h2>
+        <h1>SMP NEGERI 10 BANAWA SELATAN</h1>
+        <p>Alamat: Jalan PNPM Dusun Bambami, Desa Malino, Kec. Banawa Selatan</p>
+    </header>
+
     <nav>
         <a href="index.html" class="active">Input Data</a>
         <a href="dashboard.html">Lihat Dashboard</a>
@@ -38,7 +76,6 @@
             <h2>Formulir Input Data Sampah</h2>
             <form id="data-entry-form">
                 <input type="hidden" name="formType" value="dataEntry">
-                
                 <div>
                     <label for="nama_kelompok">Nama Kelompok:</label>
                     <input type="text" id="nama_kelompok" name="nama_kelompok" required>
@@ -75,15 +112,14 @@
                     <button type="submit">Kirim Data</button>
                 </div>
             </form>
-            <div id="form-message" style="margin-top: 15px; font-weight: bold;"></div>
+            <div id="form-message"></div>
         </section>
     </main>
+
     <footer><p>&copy; 2025 - Proyek Fase D</p></footer>
 
     <script>
-        // URL SCRIPT ANDA SUDAH DIMASUKKAN DI SINI
         const scriptURL = 'https://script.google.com/macros/s/AKfycbxmRpoTmJKEPYQeex0SyRsZ7uYCdpBPZyFstI6WP7G2ChHDOgnVNC5o_27DMXYYB_8GZw/exec';
-        
         const form = document.getElementById('data-entry-form');
         const messageDiv = document.getElementById('form-message');
 
