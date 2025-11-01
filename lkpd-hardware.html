@@ -16,11 +16,12 @@
         h2 { color: #00796b; border-bottom: 2px solid #f4f4f4; padding-bottom: 0.5rem; }
         h3 { color: #004d40; }
         
-        /* Gaya Materi (Sama seperti sebelumnya) */
-        .hardware-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
+        /* Gaya Materi Dinamis */
+        .hardware-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem; }
         .hardware-item { text-align: center; }
         .hardware-item img { width: 100px; height: 100px; object-fit: contain; border: 1px solid #ddd; border-radius: 4px; padding: 5px; }
-        .rangkuman-list { list-style-type: '✅'; padding-left: 20px; }
+        .rangkuman-list { list-style-type: '✅'; padding-left: 20px; margin: 0; }
+        #loading-materi, #loading-lkpd { text-align: center; font-style: italic; color: #555; }
         
         /* Gaya LKPD Dinamis */
         #lkpd-form table { width: 100%; border-collapse: collapse; }
@@ -28,7 +29,6 @@
         #lkpd-form th:first-child, #lkpd-form td:first-child { width: 150px; text-align: center; }
         #lkpd-form img { width: 120px; height: 120px; object-fit: contain; border-radius: 4px; }
         #lkpd-form select { width: 100%; padding: 8px; font-size: 1rem; border-radius: 4px; }
-        #loading-lkpd { text-align: center; font-style: italic; color: #555; }
         
         .form-grup { margin-bottom: 1rem; }
         .form-grup label { display: block; margin-bottom: 0.3rem; font-weight: bold; }
@@ -53,17 +53,9 @@
 
     <main>
         
-        <section id="materi">
-            <h2>Materi: Mengenal Perangkat Keras (Hardware)</h2>
-            <p><strong>Perangkat Keras (Hardware)</strong> adalah...</p>
-        </section>
-
-        <section id="rangkuman">
-            <h2>Rangkuman Materi</h2>
-            <ul class="rangkuman-list">
-                <li><strong>Hardware</strong> adalah perangkat fisik...</li>
-            </ul>
-        section>
+        <section id="materi-section">
+            <h2 id="loading-materi">Memuat materi...</h2>
+            </section>
 
         <section id="lkpd-section">
             <h2>LKPD: Jodohkan Gambar!</h2>
@@ -72,7 +64,7 @@
             <form id="lkpd-form">
                 <input type="hidden" name="formType" value="lkpdMatch">
 
-                <div class="form-grup">
+                <div class.form-grup">
                     <label for="nama_siswa">Nama Lengkap Siswa:</label>
                     <input type="text" id="nama_siswa" name="nama_siswa" required>
                 </div>
@@ -102,81 +94,155 @@
     <footer><p>&copy; 2025 - Proyek Fase D</p></footer>
 
     <script>
-        // GANTI DENGAN URL SCRIPT ANDA YANG BARU (WAJIB!)
-        const scriptURL = 'https://script.google.com/macros/s/AKfycbwzly9QhxKtk2KbTE0wJ2tbbzIouNo6HbBEiLr2AxeqL6vq1JzHJmdrqjgAqIQyU85zFw/exec';
+        // GANTI DENGAN URL SCRIPT ANDA (URL DARI PROMPT ANDA)
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbxmRpoTmJKEPYQeex0SyRsZ7uYCdpBPZyFstI6WP7G2ChHDOgnVNC5o_27DMXYYB_8GZw/exec';
         
+        // Elemen Materi
+        const materiSection = document.getElementById('materi-section');
+        const loadingMateri = document.getElementById('loading-materi');
+        
+        // Elemen LKPD
         const form = document.getElementById('lkpd-form');
         const lkpdTbody = document.getElementById('lkpd-tbody');
-        const loadingMsg = document.getElementById('loading-lkpd');
+        const loadingLkpd = document.getElementById('loading-lkpd');
         const messageDiv = document.getElementById('form-message');
         const submitButton = document.getElementById('submit-button');
+        let globalSoalData = []; // Untuk menyimpan kunci jawaban
 
-        let globalSoalData = []; // Untuk menyimpan data soal (kunci jawaban)
-
-        // 1. Ambil Soal saat halaman dimuat
+        // 1. Ambil SEMUA data saat halaman dimuat
         window.addEventListener('DOMContentLoaded', () => {
+            fetchMateri();
+            fetchSoalLKPD();
+        });
+
+        // ============================
+        // FUNGSI UNTUK MEMUAT MATERI
+        // ============================
+        function fetchMateri() {
+            fetch(scriptURL + "?action=getMateri")
+                .then(response => response.json())
+                .then(data => {
+                    if (data.result === 'success' && data.data.length > 0) {
+                        loadingMateri.style.display = 'none'; // Sembunyikan loading
+                        buildMateri(data.data);
+                    } else {
+                        throw new Error(data.message || 'Tidak ada materi ditemukan.');
+                    }
+                })
+                .catch(error => {
+                    loadingMateri.textContent = 'Gagal memuat materi: ' + error.message;
+                    loadingMateri.style.color = 'red';
+                });
+        }
+        
+        function buildMateri(materiArray) {
+            let currentGrid = null; // Penampung div grid
+            let currentList = null; // Penampung <ul> list
+            
+            // Urutkan berdasarkan kolom 'urutan'
+            materiArray.sort((a, b) => a.urutan - b.urutan);
+            
+            materiArray.forEach(item => {
+                const tipe = item.tipe;
+
+                // Jika item BUKAN grid, tapi grid sedang terbuka, tutup gridnya.
+                if (tipe !== 'grid_item' && currentGrid) {
+                    materiSection.appendChild(currentGrid);
+                    currentGrid = null;
+                }
+                // Jika item BUKAN list, tapi list sedang terbuka, tutup listnya.
+                if (tipe !== 'list' && currentList) {
+                    materiSection.appendChild(currentList);
+                    currentList = null;
+                }
+                
+                // Buat elemen berdasarkan Tipe
+                if (tipe === 'h2') {
+                    const h2 = document.createElement('h2');
+                    h2.innerHTML = item.konten_utama;
+                    materiSection.appendChild(h2);
+                } else if (tipe === 'h3') {
+                    const h3 = document.createElement('h3');
+                    h3.innerHTML = item.konten_utama;
+                    materiSection.appendChild(h3);
+                } else if (tipe === 'p') {
+                    const p = document.createElement('p');
+                    p.innerHTML = item.konten_utama;
+                    materiSection.appendChild(p);
+                } else if (tipe === 'list') {
+                    if (!currentList) {
+                        currentList = document.createElement('ul');
+                        currentList.className = 'rangkuman-list';
+                    }
+                    const li = document.createElement('li');
+                    li.innerHTML = item.konten_utama;
+                    currentList.appendChild(li);
+                } else if (tipe === 'grid_item') {
+                    if (!currentGrid) {
+                        currentGrid = document.createElement('div');
+                        currentGrid.className = 'hardware-grid';
+                    }
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'hardware-item';
+                    itemDiv.innerHTML = `
+                        <img src="${item.gambar_url}" alt="${item.konten_utama}">
+                        <br><strong>${item.konten_utama}</strong>
+                        <br>${item.konten_tambahan}
+                    `;
+                    currentGrid.appendChild(itemDiv);
+                }
+            });
+
+            // Setelah loop, cek jika ada grid/list yg masih terbuka
+            if (currentGrid) { materiSection.appendChild(currentGrid); }
+            if (currentList) { materiSection.appendChild(currentList); }
+        }
+
+        // ============================
+        // FUNGSI UNTUK MEMUAT LKPD
+        // ============================
+        function fetchSoalLKPD() {
             fetch(scriptURL + "?action=getSoalLKPD")
                 .then(response => response.json())
                 .then(data => {
                     if (data.result === 'success' && data.data.length > 0) {
                         globalSoalData = data.data; // Simpan data soal
                         buildLKPDForm(globalSoalData);
-                        loadingMsg.style.display = 'none';
+                        loadingLkpd.style.display = 'none';
                         submitButton.style.display = 'block'; // Tampilkan tombol submit
                     } else {
                         throw new Error(data.message || 'Tidak ada soal ditemukan di database.');
                     }
                 })
                 .catch(error => {
-                    loadingMsg.textContent = 'Gagal memuat soal: ' + error.message;
-                    loadingMsg.style.color = 'red';
+                    loadingLkpd.textContent = 'Gagal memuat soal: ' + error.message;
+                    loadingLkpd.style.color = 'red';
                 });
-        });
+        }
 
-        // 2. Fungsi untuk membangun tabel soal dari data JSON
         function buildLKPDForm(soalArray) {
             lkpdTbody.innerHTML = ''; // Kosongkan tabel
             
+            soalArray.sort((a, b) => a.id.localeCompare(b.id)); // Urutkan soal q1, q2...
+
             soalArray.forEach(soal => {
                 const tr = document.createElement('tr');
-                
-                // Kolom Gambar
-                const tdGambar = document.createElement('td');
-                const img = document.createElement('img');
-                img.src = soal.gambar_url;
-                img.alt = "Soal Gambar";
-                tdGambar.appendChild(img);
-                
-                // Kolom Pilihan
-                const tdPilihan = document.createElement('td');
-                const select = document.createElement('select');
-                select.name = `jawaban_${soal.id}`; // name dinamis, cth: jawaban_q1
-                select.required = true;
-                
-                // Opsi default
-                const optDefault = document.createElement('option');
-                optDefault.value = "";
-                optDefault.textContent = "-- Pilih Jawaban --";
-                select.appendChild(optDefault);
-                
-                // Buat opsi dari string 'opsi_pilihan'
-                const opsiArray = soal.opsi_pilihan.split(',');
-                opsiArray.forEach(opsi => {
-                    const opt = document.createElement('option');
-                    opt.value = opsi;
-                    opt.textContent = opsi;
-                    select.appendChild(opt);
-                });
-                
-                tdPilihan.appendChild(select);
-                
-                tr.appendChild(tdGambar);
-                tr.appendChild(tdPilihan);
+                tr.innerHTML = `
+                    <td><img src="${soal.gambar_url}" alt="Soal ${soal.id}"></td>
+                    <td>
+                        <select name="jawaban_${soal.id}" required>
+                            <option value="">-- Pilih Jawaban --</option>
+                            ${soal.opsi_pilihan.split(',').map(opsi => `<option value="${opsi}">${opsi}</option>`).join('')}
+                        </select>
+                    </td>
+                `;
                 lkpdTbody.appendChild(tr);
             });
         }
 
-        // 3. Kirim Jawaban (Form Submit)
+        // ============================
+        // FUNGSI UNTUK MENGIRIM SKOR LKPD
+        // ============================
         form.addEventListener('submit', e => {
             e.preventDefault();
             submitButton.disabled = true;
@@ -184,9 +250,8 @@
             
             let skor = 0;
             const totalSoal = globalSoalData.length;
-            const formData = new FormData(); // Data untuk dikirim ke Google Sheet
+            const formData = new FormData();
             
-            // Tambahkan data siswa dan formType
             formData.append('formType', 'lkpdMatch'); // Penting!
             formData.append('nama_siswa', form.nama_siswa.value);
             formData.append('kelas', form.kelas.value);
@@ -195,23 +260,15 @@
             globalSoalData.forEach(soal => {
                 const soalId = soal.id; // cth: "q1"
                 const jawabanBenar = soal.jawaban_benar;
-                
-                // Temukan <select> di dalam form
                 const selectElement = form.querySelector(`select[name="jawaban_${soalId}"]`);
                 const jawabanSiswa = selectElement.value;
                 
-                // Hitung skor
-                if (jawabanSiswa === jawabanBenar) {
-                    skor++;
-                }
-                
-                // Tambahkan jawaban siswa ke formData untuk dikirim ke Sheet
+                if (jawabanSiswa === jawabanBenar) { skor++; }
                 formData.append(`jawaban_${soalId}`, jawabanSiswa);
             });
 
-            // Konversi skor ke 0-100
             const skorPersen = Math.round((skor / totalSoal) * 100);
-            formData.append('skor', skorPersen); // Tambahkan skor ke formData
+            formData.append('skor', skorPersen);
 
             // Mengirim data
             fetch(scriptURL, { method: 'POST', body: formData})
